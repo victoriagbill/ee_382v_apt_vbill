@@ -73,12 +73,13 @@ def contractAsJson(filename):
 						temp2 = re.split('[<>]',str(temp[y]))[data_pos[y]]
 						data_val = re.search('[A-Z]+7*',temp2).group(0)
 						options_data[data_name[y]] = unicode(data_val)
-						date = re.search('[0-9]+',temp2).group(0)
+						date = re.search('1'+'[0-9]+',temp2).group(0)
 						option_type = re.search('[A-Z]',temp2[5:]).group(0)
 					elif data_name[y] == unicode('Change'):
 						temp2 = re.split('[<>]',str(temp[y]))
 						if len(temp2)>14:
 							data_val =' '+  temp2[8]
+
 						else:
 							data_val =' '+ temp2[data_pos[y]]
 						options_data[data_name[y]] = unicode(data_val)
@@ -87,6 +88,8 @@ def contractAsJson(filename):
 						options_data[data_name[y]] = unicode(data_val)
 				options_data[unicode('Date')] = unicode(date)
 				options_data[unicode('Type')] = unicode(option_type)
+				if options_data['Last'] == '':
+					options_data['Last'] = unicode('N/A')
 				options_quotes.append(options_data)
 				options_data = {}
 			
@@ -105,3 +108,4 @@ def contractAsJson(filename):
 
 
 # jsonQuoteData = contractAsJson('aapl.dat')
+
