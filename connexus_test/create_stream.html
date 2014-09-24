@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
+</head>
+  <body>
+	<header>
+		<h2>Connex.us</h2>
+	</header>
+	
+	<nav>
+		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
+	</nav>
+
+	
+		<!-- How to separate columns? Submit button at bottom -->
+		<p>This is the create stream page:</p>
+		<form action="{{ upload_url }}" method="POST" enctype="multipart/form-data">
+			<input type="text" name="stream_name"><br>
+			<h4>Name your stream</h4><br><br>
+			<input type="text" name="subscribers"><br>
+			<input type="text" name="invite_message"><br>
+			<h4>Add subscribers</h4><br><br>
+			<input type="text" name="tags"><br>
+			<h4>Tag your stream</h4><br><br>
+			<!-- leave as file submission/required for now, change later -->
+			<input type="file" name="cover_url"><br>
+			<h4>URL to cover image <!--<br>(Can be empty)--></h4><br>
+			<input type="submit" value="Create Stream">
+		</form>
+
+
+
+	<footer>
+		</br>
+		<hr>
+		<form action="/invite" method="post">Testing email invite:
+		  <input value="invite_email" name="invite_email">
+		  <input type="submit" value="send">
+		</form>
+
+		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
+	</footer>
+
+	</body>
+</html>
+{% endautoescape %}
