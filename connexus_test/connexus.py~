@@ -128,6 +128,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			img_info[stream_name]['stream_len'] = 1
 			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers??????
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
+			img_info[stream_name]['views'] = 1
 			invite_message = self.request.get('invite_message')
 			print img_info
 			print images.get_serving_url(blob_info.key())
@@ -141,6 +142,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			blob_info = upload_files[0]
 			upload_time = datetime.now()
 			img_info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
+			img_info[stream_name]['stream_len'] += 1
 			img_info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
 			print img_info
 			print images.get_serving_url(blob_info.key())
@@ -185,8 +187,8 @@ class ViewSingle(webapp2.RequestHandler):
 	#clicking on view tab should take you to view all streams page
 	def get(self, stream_name):
 		print 'entered single stream handler' #debugging, clean up later
-		print type(stream_name)
 		print stream_name
+		img_info[stream_name]['views'] += 1
 		# the create page serves as the MainHandler for the create stream UploadHandler, ServeHandler
 		upload_url = blobstore.create_upload_url('/upload')
 		user = users.get_current_user()
@@ -226,6 +228,11 @@ class Search(webapp2.RequestHandler):
   	}
 		template = JINJA_ENVIRONMENT.get_template('search.html')
 		self.response.write(template.render(template_values))
+
+class SearchStreams(webapp2.RequestHandler):
+	def post(self):
+		search_data = self.request.get('cxus_search')
+		self.redirect('/search')
 
 class Trending(webapp2.RequestHandler):
 	def get(self):
@@ -306,6 +313,7 @@ application = webapp2.WSGIApplication([
 	('/viewall', View),
 	('/viewsingle/([^/]+)?', ViewSingle),
 	('/search', Search),
+	('/searchstreams', SearchStreams),
 	('/trending', Trending),
 	('/social', Social),
 	('/upload', UploadHandler),

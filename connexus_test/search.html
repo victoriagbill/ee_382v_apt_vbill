@@ -5,25 +5,33 @@
   <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
 </head>
   <body>
-	<div id="header">
+	<header>
 		<h2>Connex.us</h2>
-	</div>
+	</header>
 	
-	<div id="nav">
+	<nav>
 		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
-	</div>
+	</nav>
 
 	<p>Nothing here yet, this is the search page</p>
 
-	</br>
-	<hr>
+	<form action="/searchstreams" method="POST">
+		Search streams:
+			<input type="search" name="cxus_search">
+			<input type="submit" value="Search">
+	</form>
 
-  <form action="/invite" method="post">Testing email invite:
-    <input value="invite_email" name="invite_email">
-    <input type="submit" value="send">
-  </form>
+	<footer>
+		</br>
+		<hr>
+		<form action="/invite" method="post">Testing email invite:
+		  <input value="invite_email" name="invite_email">
+		  <input type="submit" value="send">
+		</form>
 
-  <a href="{{ url|safe }}">{{ url_linktext }}</a> 
+		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
+	</footer>
+
 
 	</body>
 </html>
