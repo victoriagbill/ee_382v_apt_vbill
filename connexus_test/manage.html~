@@ -56,7 +56,9 @@
 				<th>Views</th>
 				<th>Unsubscribe</th>
 			</tr>
-
+			<tr>
+				<td>Testname</td>
+			</tr>
 		</table>
 	{% endif %}
 	

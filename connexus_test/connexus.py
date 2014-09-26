@@ -1,6 +1,7 @@
 import os
 import urllib
 from datetime import datetime
+import time
 
 from google.appengine.api import users
 from google.appengine.api import mail, images
@@ -14,7 +15,7 @@ import re
 import json
 
 
-img_info = {} #for now this is empty at startup, when app is deployed need to figure out how to store img_info to datastore and retrieve for each user
+# img_info = {} #for now this is empty at startup, when app is deployed need to figure out how to store img_info to datastore and retrieve for each user
 
 def cleanup(blob_keys):
     blobstore.delete(blob_keys)
@@ -77,8 +78,12 @@ class Manage(webapp2.RequestHandler):
       'url': url,
       'url_linktext': url_linktext,
   		}
-			print 'img_info'
-			print img_info
+
+
+			all_streams_user = ImageStream.query(ImageStream.owner == user.nickname()).fetch()
+			img_info = {}
+			for x in xrange(len(all_streams_user)):
+				img_info[all_streams_user[x].stream_name] = all_streams_user[x].info
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 			else:
@@ -136,6 +141,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			stream_name = self.request.get('stream_name')
 			blob_info = upload_files[0]
 			print 'stream name = %s' % stream_name
+			img_info = {}
 			img_info[stream_name] = {}
 			upload_time = datetime.now()
 			img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
@@ -145,13 +151,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
 			img_info[stream_name]['views'] = 1
 			invite_message = self.request.get('invite_message') 
-			data_stream = ImageStream(stream_name=stream_name, owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info)
+			data_stream = ImageStream(stream_name=self.request.get('stream_name'), owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info)
 			data_stream_key = data_stream.put()
-			print img_info
-			print images.get_serving_url(blob_info.key())
-			print data_stream_key
-			self.redirect('/manage')
-			
+			#print img_info
+			#print images.get_serving_url(blob_info.key())
+			#print data_stream_key
+			time.sleep(0.1)
+			self.redirect('/manage',permanent=True)
 
 		elif self.request.get('file_name'):
 			print 'entered add image'
@@ -160,11 +166,14 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
 			blob_info = upload_files[0]
 			upload_time = datetime.now()
-			img_info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
-			img_info[stream_name]['stream_len'] += 1
-			img_info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
-			print img_info
+			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+			single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
+			single_stream[0].info[stream_name]['stream_len'] += 1
+			single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
+			single_stream[0].put()
+			print single_stream
 			print images.get_serving_url(blob_info.key())
+			time.sleep(0.1)
 			self.redirect('/viewsingle'+'/'+stream_name)
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
@@ -188,7 +197,10 @@ class View(webapp2.RequestHandler):
 		    'url': url,
 		    'url_linktext': url_linktext,
 			}
-			test_ndb = ImageStream.query().fetch(20)
+			all_streams = ImageStream.query().fetch()
+			img_info = {}
+			for x in xrange(len(all_streams)):
+				img_info[all_streams[x].stream_name] = all_streams[x].info
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 			else:
@@ -208,15 +220,8 @@ class ViewSingle(webapp2.RequestHandler):
 	def get(self, stream_name):
 		print 'entered single stream handler' #debugging, clean up later
 		print stream_name
-		test_ndb = ImageStream.query().fetch(20)
-		print test_ndb
-		print len(test_ndb)
-		print type(test_ndb)
-		print test_ndb[0].owner
-		print test_ndb[0].stream_name
-		print test_ndb[0].subscribers
-		print test_ndb[0].tags
-		img_info[stream_name]['views'] += 1
+
+		# img_info[stream_name]['views'] += 1
 		# the create page serves as the MainHandler for the create stream UploadHandler, ServeHandler
 		upload_url = blobstore.create_upload_url('/upload')
 		user = users.get_current_user()
@@ -228,6 +233,16 @@ class ViewSingle(webapp2.RequestHandler):
 		    'url_linktext': url_linktext,
 				'upload_url': upload_url,
 			}
+
+			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+			single_stream[0].info[stream_name]['views'] += 1
+			single_stream[0].put()
+			print single_stream
+
+			img_info = {}
+			for x in xrange(len(single_stream)):
+				img_info[single_stream[x].stream_name] = single_stream[x].info
+
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 				template_values['this_stream'] = stream_name

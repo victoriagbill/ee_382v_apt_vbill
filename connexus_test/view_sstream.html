@@ -17,12 +17,16 @@
 	<h3>{{ this_stream }}</h3>	
 	</p>
 
-	{% for img_url in streams[this_stream]['stream_urls'] %}
+	{% for img_url in streams[this_stream][this_stream]['stream_urls'] %}
 		<div id="img-box">
 	  	<img class="thumb" src="{{ img_url[0] }}"></br></br>
 		</div>
-	
 	{% endfor %}
+
+	<form action="/viewsingle">
+		<input type="hidden" name="more_check" value="{{ more_check }}">
+		<input type="submit" value="View more">
+	</form>
 
 
 	<div id="add-box">
