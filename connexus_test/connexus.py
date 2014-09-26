@@ -26,6 +26,17 @@ JINJA_ENVIRONMENT = jinja2.Environment(
   autoescape=True)
 
 
+class ImageStream(ndb.Model):
+	# models image stream with stream_name, owner, subscriber?
+	# need json dumb/property for all other info?
+	# stream1.put() creates in datastore, stream1.get()?
+	# can use @classmethod to create a default query? get all?
+	stream_name = ndb.StringProperty()
+	owner = ndb.StringProperty()
+	subscribers = ndb.StringProperty(repeated=True)
+	tags = ndb.StringProperty(repeated=True)
+	info = ndb.JsonProperty()
+
 class MainPage(webapp2.RequestHandler):
 	#main page = login, should check for login then dump to manage page?
   def get(self):
@@ -117,6 +128,10 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		print 'entered upload'
 		if self.request.get('stream_name'):
 			print 'entered create'
+			user = users.get_current_user()
+			print users.get_current_user()
+			print type(user.nickname())
+			
 			upload_files = self.get_uploads('cover_url')  # 'file' is file upload field in the form
 			stream_name = self.request.get('stream_name')
 			blob_info = upload_files[0]
@@ -129,11 +144,15 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers??????
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
 			img_info[stream_name]['views'] = 1
-			invite_message = self.request.get('invite_message')
+			invite_message = self.request.get('invite_message') 
+			data_stream = ImageStream(stream_name=stream_name, owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info)
+			data_stream_key = data_stream.put()
 			print img_info
 			print images.get_serving_url(blob_info.key())
+			print data_stream_key
 			self.redirect('/manage')
-			#self.redirect('/serve/%s' % blob_info.key())
+			
+
 		elif self.request.get('file_name'):
 			print 'entered add image'
 			stream_name = self.request.get('this_stream')
@@ -169,6 +188,7 @@ class View(webapp2.RequestHandler):
 		    'url': url,
 		    'url_linktext': url_linktext,
 			}
+			test_ndb = ImageStream.query().fetch(20)
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 			else:
@@ -188,6 +208,14 @@ class ViewSingle(webapp2.RequestHandler):
 	def get(self, stream_name):
 		print 'entered single stream handler' #debugging, clean up later
 		print stream_name
+		test_ndb = ImageStream.query().fetch(20)
+		print test_ndb
+		print len(test_ndb)
+		print type(test_ndb)
+		print test_ndb[0].owner
+		print test_ndb[0].stream_name
+		print test_ndb[0].subscribers
+		print test_ndb[0].tags
 		img_info[stream_name]['views'] += 1
 		# the create page serves as the MainHandler for the create stream UploadHandler, ServeHandler
 		upload_url = blobstore.create_upload_url('/upload')
@@ -289,7 +317,7 @@ class InviteFriendHandler(webapp2.RequestHandler):
 
 
 class NotFoundPageHandler(webapp2.RequestHandler):
-	def get(self):
+	def get(self, resource):
 		self.error(404)
 		user = users.get_current_user()
 		if user:
@@ -302,6 +330,12 @@ class NotFoundPageHandler(webapp2.RequestHandler):
       'url': url,
       'url_linktext': url_linktext,
   	}
+		# switch(resource) {
+		#	case 'snamediff':
+		#		template_values['error_msg'] = 'You already have a stream with that name, please pick another name for your new stream'
+		#		break;
+		#}
+		# error_msg = resource
 		template = JINJA_ENVIRONMENT.get_template('error.html')
 		self.response.write(template.render(template_values))	
 
