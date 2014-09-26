@@ -21,13 +21,14 @@
 		<div id="img-box">
 	  	<img class="thumb" src="{{ img_url[0] }}"></br></br>
 		</div>
-	
 	{% endfor %}
-
-	<form action="/viewsingle">
-		<input type="hidden" name="more_check" value="{{ more_check }}">
-		<input type="submit" value="View more">
-	</form>
+	
+	{% if not {{ more_check }} %}
+		<form>
+			<input type="hidden" name="more_check" value="1">
+			<input type="submit" value="View more">
+		</form>
+	{% endif %}
 
 
 	<div id="add-box">

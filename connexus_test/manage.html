@@ -40,10 +40,30 @@
 					<td>
 						{{ streams[stream][stream]['stream_len'] }}
 					</td>
-
-				</tr> 		
+					<td>
+						<form action="/manage" method="post">
+							<input type="checkbox" name="delete" value="{{ stream }}">
+							
+					</td>
+				</tr> 
 			{% endfor %}
+			
 		</table>
+		</br>
+
+						<input type="submit" value="Delete checked">
+					</form>
+
+
+		
+
+	
+		<!--</br></br>
+
+		<form action="/manage" method="post">
+			<input type="checkbox" name="delete" value="test">
+			<input type="submit" value="Delete checked">
+		</form> -->
 
 		</br>
 		</br>

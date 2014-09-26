@@ -79,7 +79,6 @@ class Manage(webapp2.RequestHandler):
       'url_linktext': url_linktext,
   		}
 
-
 			all_streams_user = ImageStream.query(ImageStream.owner == user.nickname()).fetch()
 			img_info = {}
 			for x in xrange(len(all_streams_user)):
@@ -98,6 +97,19 @@ class Manage(webapp2.RequestHandler):
 
 		template = JINJA_ENVIRONMENT.get_template('manage.html')
 		self.response.write(template.render(template_values))
+		
+	def post(self):
+		print 'entered post'
+		to_delete = self.request.get_all('delete')
+		print to_delete
+		del_stream = ImageStream.query(ImageStream.stream_name == to_delete[0]).fetch()
+		print del_stream
+		del_key = del_stream[0].key
+		print del_key
+		del_key.delete()
+		#del_stream[0].delete()
+		time.sleep(0.1)
+		self.redirect('/manage')
 
 
 class Create(webapp2.RequestHandler):
@@ -243,6 +255,12 @@ class ViewSingle(webapp2.RequestHandler):
 			for x in xrange(len(single_stream)):
 				img_info[single_stream[x].stream_name] = single_stream[x].info
 
+			#if self.request.get('more_check') == None:
+			if not self.request.get('more_check'):
+				img_info[stream_name][stream_name]['stream_urls'] = img_info[stream_name][stream_name]['stream_urls'][0:3]
+				template_values['more_check'] = 0
+			else:
+				template_values['more_check'] = 1
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 				template_values['this_stream'] = stream_name
@@ -330,6 +348,23 @@ class InviteFriendHandler(webapp2.RequestHandler):
 		message.send()
 		self.redirect('/')
 
+class DeleteStream(webapp2.RequestHandler):
+	def get(self):
+		print 'entered delete'
+		user = users.get_current_user()
+		if user is None:
+			login_url = users.create_login_url(self.request.path)
+			self.redirect(login_url)
+			return
+		
+		to_delete = self.request.get_all('delete')
+		print to_delete
+		#stream_del = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+		#stream_del[0].delete()
+		
+		time.sleep(0.1)
+		self.redirect('/manage')
+
 
 class NotFoundPageHandler(webapp2.RequestHandler):
 	def get(self, resource):
@@ -367,6 +402,7 @@ application = webapp2.WSGIApplication([
 	('/trending', Trending),
 	('/social', Social),
 	('/upload', UploadHandler),
+	('/delete', DeleteStream),
 	('/serve/([^/]+)?', ServeHandler),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
