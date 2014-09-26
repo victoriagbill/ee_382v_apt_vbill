@@ -39,12 +39,15 @@ header {
 table {
 	width: 100%;
 	text-align: left;
-	rules: 2px;
 }
 
-/*th, td {
-	border-right: solid black 3px;
-}*/
+td {
+	width: 200px;
+}
+
+td+td {
+	width: auto;
+}
 
 #img-box {
 	width: 25%;

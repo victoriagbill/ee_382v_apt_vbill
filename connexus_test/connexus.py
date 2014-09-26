@@ -1,5 +1,6 @@
 import os
 import urllib
+from datetime import datetime
 
 from google.appengine.api import users
 from google.appengine.api import mail, images
@@ -106,7 +107,9 @@ class Create(webapp2.RequestHandler):
 
 #class CreateStreamHandler(webapp2.RequestHandler):
 	#def post(self):
-
+ 
+# Need to add tuple of date/time to image url, ndb.DateTimeProperty()? 
+# Or, use python datetime.datetime module
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
@@ -119,8 +122,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			blob_info = upload_files[0]
 			print 'stream name = %s' % stream_name
 			img_info[stream_name] = {}
-			img_info[stream_name]['cover'] = images.get_serving_url(blob_info.key())
-			img_info[stream_name]['stream_urls'] = [images.get_serving_url(blob_info.key())]
+			upload_time = datetime.now()
+			img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
+			img_info[stream_name]['stream_urls'] = [(images.get_serving_url(blob_info.key()), str(upload_time.date()))]
+			img_info[stream_name]['stream_len'] = 1
+			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers??????
+			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
+			invite_message = self.request.get('invite_message')
 			print img_info
 			print images.get_serving_url(blob_info.key())
 			self.redirect('/manage')
@@ -128,11 +136,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		elif self.request.get('file_name'):
 			print 'entered add image'
 			stream_name = self.request.get('this_stream')
-			print stream_name
-			
+			print stream_name			
 			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
 			blob_info = upload_files[0]
-			img_info[stream_name]['stream_urls'].append(images.get_serving_url(blob_info.key()))
+			upload_time = datetime.now()
+			img_info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
+			img_info[stream_name]['stream_len'] += 1
+			img_info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
 			print img_info
 			print images.get_serving_url(blob_info.key())
 			self.redirect('/viewsingle'+'/'+stream_name)

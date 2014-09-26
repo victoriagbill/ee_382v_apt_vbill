@@ -25,15 +25,38 @@
 		<table rules="cols" frame="mhs">
 			<tr>
 				<th>Name</th>
-				<th>| Last New Picture</th>
-				<th>| Number of Pictures</th>
-				<th>| Delete</th>
+				<th>Last New Picture</th>
+				<th>Number of Pictures</th>
+				<th>Delete</th>
 			</tr>
 			{% for stream in streams %}
-				<tr><td>
-					<b><a href="/viewsingle/{{ stream }}">{{ stream }}<a></b>
-				</td></tr> 		
+				<tr>
+					<td>
+						<b><a href="/viewsingle/{{ stream }}">{{ stream }}<a></b>
+					</td>
+					<td>
+						{{ streams[stream]['stream_urls'][-1][1] }}
+					</td>
+					<td>
+						{{ streams[stream]['stream_len'] }}
+					</td>
+
+				</tr> 		
 			{% endfor %}
+		</table>
+
+		</br>
+		</br>
+		<h3>Streams I subscribe to</h3></br>
+		<table rules="cols" frame="mhs">
+			<tr>
+				<th>Name</th>
+				<th>Last New Picture</th>
+				<th>Number of Pictures</th>
+				<th>Views</th>
+				<th>Unsubscribe</th>
+			</tr>
+
 		</table>
 	{% endif %}
 	

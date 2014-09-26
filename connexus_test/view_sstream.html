@@ -19,7 +19,7 @@
 
 	{% for img_url in streams[this_stream]['stream_urls'] %}
 		<div id="img-box">
-	  	<img class="thumb" src="{{ img_url }}"></br></br>
+	  	<img class="thumb" src="{{ img_url[0] }}"></br></br>
 		</div>
 	
 	{% endfor %}
