@@ -32,11 +32,22 @@ DEQUE INIT'S -SR
 from collections import deque
 from datetime import datetime, timedelta
 
-#A list of queues, where each queue holds the timestapmps of when each stream is accessed
+#A list of queues, where each queue holds the timestamps of when each stream is accessed
 recent = []
 index_of_new_stream = 0
 
 
+class ImageStream(ndb.Model):
+	# models image stream with stream_name, owner, subscriber?
+	# need json dumb/property for all other info?
+	# stream1.put() creates in datastore, stream1.get()?
+	# can use @classmethod to create a default query? get all?
+	stream_name = ndb.StringProperty()
+	owner = ndb.StringProperty()
+	subscribers = ndb.StringProperty(repeated=True)
+	tags = ndb.StringProperty(repeated=True)
+	info = ndb.JsonProperty()
+	timestamps = ndb.StringProperty(repeated=True)
 
 
 class MainPage(webapp2.RequestHandler):
@@ -119,34 +130,6 @@ class Create(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 
 
-		'''
-		Each time a stream is created, create a queue for that stream -SR
-		'''
-		recent[index_of_new_stream] = (streamName, deque() )
-		index_of_new_stream += 1
-
-
-class Delete(webapp2.RequestHandler):
-	def get(self):
-		user = users.get_current_user()
-		if user:
-			url = users.create_logout_url('/')
-			url_linktext = 'Logout'
-		else:
-			url = users.create_login_url(self.request.uri)
-			url_linktext = 'Login'
-
-		template_values = {
-      'url': url,
-      'url_linktext': url_linktext,
-			'upload_url': upload_url,
-  		}
-		template = JINJA_ENVIRONMENT.get_template('create_stream.html')
-		self.response.write(template.render(template_values))
-
-		#TODO remove stream from store?
-		index_of_new_stream -= 1
-
 
 #class CreateStreamHandler(webapp2.RequestHandler):
 	#def post(self):
@@ -160,10 +143,15 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		print 'entered upload'
 		if self.request.get('stream_name'):
 			print 'entered create'
+			user = users.get_current_user()
+			print users.get_current_user()
+			print type(user.nickname())
+			
 			upload_files = self.get_uploads('cover_url')  # 'file' is file upload field in the form
 			stream_name = self.request.get('stream_name')
 			blob_info = upload_files[0]
 			print 'stream name = %s' % stream_name
+			img_info = {}
 			img_info[stream_name] = {}
 			upload_time = datetime.now()
 			img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
@@ -172,24 +160,15 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers??????
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
 			img_info[stream_name]['views'] = 1
-			invite_message = self.request.get('invite_message')
-			print img_info
-			print images.get_serving_url(blob_info.key())
-			self.redirect('/manage')
-			#self.redirect('/serve/%s' % blob_info.key())
-		elif self.request.get('file_name'):
-			print 'entered add image'
-			stream_name = self.request.get('this_stream')
-			print stream_name			
-			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
-			blob_info = upload_files[0]
-			upload_time = datetime.now()
-			img_info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
-			img_info[stream_name]['stream_len'] += 1
-			img_info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
-			print img_info
-			print images.get_serving_url(blob_info.key())
-			self.redirect('/viewsingle'+'/'+stream_name)
+			img_info[stream_name]['timestamps'] = [ str(datetime.now()) ]
+			invite_message = self.request.get('invite_message') 
+			data_stream = ImageStream(stream_name=self.request.get('stream_name'), owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info)
+			data_stream_key = data_stream.put()
+			#print img_info
+			#print images.get_serving_url(blob_info.key())
+			#print data_stream_key
+			time.sleep(0.1)
+			self.redirect('/manage',permanent=True)
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -226,28 +205,18 @@ class View(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('view_astreams.html')
 		self.response.write(template.render(template_values))
 
+
+
 class ViewSingle(webapp2.RequestHandler):
 	#clicking on view tab should take you to view all streams page
 	def get(self, stream_name):
 		print 'entered single stream handler' #debugging, clean up later
 		print stream_name
-		img_info[stream_name]['views'] += 1
+
+		# img_info[stream_name]['views'] += 1
 		# the create page serves as the MainHandler for the create stream UploadHandler, ServeHandler
 		upload_url = blobstore.create_upload_url('/upload')
 		user = users.get_current_user()
-
-		'''
-		UPDATE VIEWS
-		Each time a stream has been viewed
-		'''
-		print "time viewed" + timestamp
-		timestamp =  datetime.now()
-		currentTIme = datetime.now()
-		streamIndex = recent.index(streamName) #don't need to give index from deque, right?
-		#streamIndex is where the tuple of name/deque is and [1] is the deque itself
-		recent[streamIndex][1].append(timestamp)
-
-
 		if user:
 			url = users.create_logout_url('/')
 			url_linktext = 'Logout'
@@ -256,6 +225,17 @@ class ViewSingle(webapp2.RequestHandler):
 		    'url_linktext': url_linktext,
 				'upload_url': upload_url,
 			}
+
+			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+			single_stream[0].info[stream_name]['views'] += 1
+			single_stream[0].info[stream_name]['time_stamps'].append( str(datetime.now()) )
+			single_stream[0].put()
+			print single_stream
+			
+			img_info = {}
+			for x in xrange(len(single_stream)):
+				img_info[single_stream[x].stream_name] = single_stream[x].info
+
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 				template_values['this_stream'] = stream_name
@@ -268,6 +248,7 @@ class ViewSingle(webapp2.RequestHandler):
 			}
 		template = JINJA_ENVIRONMENT.get_template('view_sstream.html')
 		self.response.write(template.render(template_values))
+
 
 class Search(webapp2.RequestHandler):
 	def get(self):
@@ -296,23 +277,18 @@ class SearchStreams(webapp2.RequestHandler):
 		search_data = self.request.get('cxus_search')
 		print search_data
 
-		search_list = []
-
-		#TODO streamName/streamURL/stream tag names and structure
-		for streamName in streamDict:
-			search_list.append( SequenceMatcher(None, search_data, streamName).ratio()), (streamName, streamURL) )
 	
-		for tag in StreamDict:
-			search_list.append( SequenceMatcher(None, search_data, tag).ratio()), (streamName, streamURL) )
+		search_results = ImageStream.query(ImageStream.stream_name == search_data).fetch()
 
-		unique_search_list = set(search_list)
+		for tag in ImageStream.stream_name['tags']
+			search_results.append( ImageStream.query(ImageStream.stream_name['tags'][tag] == search_data).fetch() )
 
-		unique_search_list.sort
+		search_results.sort
 
 		#return stream names/urls of top 5 streams
 		top_five_results = unique_search_list[:5][0]
 
-		if len(unique_search_list) > 0:
+		if len(search_results) > 0:
 				template_values['streams'] = unique_search_list[:5][0]
 			else:
 				template_values['command'] = 'No matching streams found'
@@ -369,30 +345,43 @@ class TrendingDaily(webapp2.RequestHandler):
 #Called every 5 minutes to clean out old timestamps 
 def freshenTrends():
 	'''
-	Clear times over an hour
+	Load up all the stream info
 	'''
+	all_streams = ImageStream.query().fetch()
+	img_info = {}
+	for x in xrange(len(all_streams)):
+		img_info[all_streams[x].stream_name] = all_streams[x].info
 
+
+	'''
+	Clear out times older than hour
+	'''
+	current_time = str(datetime.now())
 	#are python queues indexed?
-	for stream in streamDict
+	for stream in img_info
 		index = 0
-		while if (timestamp - recent[stream][1][index]) > timedelta(hours = 1):
-			recent[stream[1].popleft()
+		converted_time = time.strptime(img_info[stream]['time_stamps']][index], "%Y-%m-%d %H:%M:%S.%f" )
+		while (current_time- converted_time) > timedelta(hours = 1):
+			del img_info[stream]['time_stamps'].remove(converted_time)
 			index += 1
+			converted_time = time.strptime( stream.string_timestamps[index], "%Y-%m-%d %H:%M:%S.%f" )
+
+	'''
+	Get most viewed streams for past hour
+	'''
+	popStreams []
+	for stream in img_info:
+		popStreams[stream] = (len(img_info[stream]['time_stamps']), streamName)
+	popStreams.sort()
 
 	return
 
 
 #returns the top 3 trends
 def getTrends():
-	popStreams []
-	for i in recent:
-		popStreams[i] = len(recent[0][1])
-
-	popStreams.sort()
-
-	topStreams[] = (popStreams[0] : popStreams[3])
-
-	return topStreams
+	if len(popStreams) < 3
+		freshenTrends() 
+	return popStreams[0] : popStreams[3]
 
 
 def sendTrends():
