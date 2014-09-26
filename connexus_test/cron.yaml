@@ -1,0 +1,10 @@
+cron:
+- description: short summary job
+  url: /trendingShort
+  schedule: every 5 minutes
+  - description: hourly summary job
+  url: /trendingHourly
+  schedule: every hour
+  - description: daily summary job
+  url: /trendingDaily
+  schedule: every 24 hours
