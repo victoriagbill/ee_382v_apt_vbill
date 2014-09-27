@@ -1,6 +1,7 @@
 import os
 import urllib
-from datetime import datetime
+from datetime import datetime, timedelta
+import time
 
 from google.appengine.api import users
 from google.appengine.api import mail, images
@@ -14,7 +15,7 @@ import re
 import json
 
 
-img_info = {} #for now this is empty at startup, when app is deployed need to figure out how to store img_info to datastore and retrieve for each user
+# img_info = {} #for now this is empty at startup, when app is deployed need to figure out how to store img_info to datastore and retrieve for each user
 
 def cleanup(blob_keys):
     blobstore.delete(blob_keys)
@@ -24,17 +25,6 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
   extensions=['jinja2.ext.autoescape'],
   autoescape=True)
-
-
-'''
-DEQUE INIT'S -SR
-'''
-from collections import deque
-from datetime import datetime, timedelta
-
-#A list of queues, where each queue holds the timestamps of when each stream is accessed
-recent = []
-index_of_new_stream = 0
 
 
 class ImageStream(ndb.Model):
@@ -48,7 +38,6 @@ class ImageStream(ndb.Model):
 	tags = ndb.StringProperty(repeated=True)
 	info = ndb.JsonProperty()
 	timestamps = ndb.StringProperty(repeated=True)
-
 
 class MainPage(webapp2.RequestHandler):
 	#main page = login, should check for login then dump to manage page?
@@ -90,8 +79,11 @@ class Manage(webapp2.RequestHandler):
       'url': url,
       'url_linktext': url_linktext,
   		}
-			print 'img_info'
-			print img_info
+
+			all_streams_user = ImageStream.query(ImageStream.owner == user.nickname()).fetch()
+			img_info = {}
+			for x in xrange(len(all_streams_user)):
+				img_info[all_streams_user[x].stream_name] = all_streams_user[x].info
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 			else:
@@ -106,6 +98,19 @@ class Manage(webapp2.RequestHandler):
 
 		template = JINJA_ENVIRONMENT.get_template('manage.html')
 		self.response.write(template.render(template_values))
+		
+	def post(self):
+		print 'entered post'
+		to_delete = self.request.get_all('delete')
+		print to_delete
+		del_stream = ImageStream.query(ImageStream.stream_name == to_delete[0]).fetch()
+		print del_stream
+		del_key = del_stream[0].key
+		print del_key
+		del_key.delete()
+		#del_stream[0].delete()
+		time.sleep(0.1)
+		self.redirect('/manage')
 
 
 class Create(webapp2.RequestHandler):
@@ -128,8 +133,6 @@ class Create(webapp2.RequestHandler):
   	}
 		template = JINJA_ENVIRONMENT.get_template('create_stream.html')
 		self.response.write(template.render(template_values))
-
-
 
 #class CreateStreamHandler(webapp2.RequestHandler):
 	#def post(self):
@@ -170,6 +173,23 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			time.sleep(0.1)
 			self.redirect('/manage',permanent=True)
 
+		elif self.request.get('file_name'):
+			print 'entered add image'
+			stream_name = self.request.get('this_stream')
+			print stream_name			
+			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
+			blob_info = upload_files[0]
+			upload_time = datetime.now()
+			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+			single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
+			single_stream[0].info[stream_name]['stream_len'] += 1
+			single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
+			single_stream[0].put()
+			print single_stream
+			print images.get_serving_url(blob_info.key())
+			time.sleep(0.1)
+			self.redirect('/viewsingle'+'/'+stream_name)
+
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
 		print 'entered serve'
@@ -191,6 +211,10 @@ class View(webapp2.RequestHandler):
 		    'url': url,
 		    'url_linktext': url_linktext,
 			}
+			all_streams = ImageStream.query().fetch()
+			img_info = {}
+			for x in xrange(len(all_streams)):
+				img_info[all_streams[x].stream_name] = all_streams[x].info
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 			else:
@@ -204,8 +228,6 @@ class View(webapp2.RequestHandler):
 			}
 		template = JINJA_ENVIRONMENT.get_template('view_astreams.html')
 		self.response.write(template.render(template_values))
-
-
 
 class ViewSingle(webapp2.RequestHandler):
 	#clicking on view tab should take you to view all streams page
@@ -231,11 +253,17 @@ class ViewSingle(webapp2.RequestHandler):
 			single_stream[0].info[stream_name]['time_stamps'].append( str(datetime.now()) )
 			single_stream[0].put()
 			print single_stream
-			
+
 			img_info = {}
 			for x in xrange(len(single_stream)):
 				img_info[single_stream[x].stream_name] = single_stream[x].info
 
+			#if self.request.get('more_check') == None:
+			if not self.request.get('more_check'):
+				img_info[stream_name][stream_name]['stream_urls'] = img_info[stream_name][stream_name]['stream_urls'][0:3]
+				template_values['more_check'] = 0
+			else:
+				template_values['more_check'] = 1
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 				template_values['this_stream'] = stream_name
@@ -248,7 +276,6 @@ class ViewSingle(webapp2.RequestHandler):
 			}
 		template = JINJA_ENVIRONMENT.get_template('view_sstream.html')
 		self.response.write(template.render(template_values))
-
 
 class Search(webapp2.RequestHandler):
 	def get(self):
@@ -265,12 +292,6 @@ class Search(webapp2.RequestHandler):
   	}
 		template = JINJA_ENVIRONMENT.get_template('search.html')
 		self.response.write(template.render(template_values))
-
-'''
-START OF STEVE'S FUNCTIONS
-'''
-
-from difflib import SequenceMatcher
 
 class SearchStreams(webapp2.RequestHandler):
 	def post(self):
@@ -295,8 +316,6 @@ class SearchStreams(webapp2.RequestHandler):
 
 		template = JINJA_ENVIRONMENT.get_template('search_results.html')
 		self.response.write(template.render(template_values))
-			
-
 
 class Trending(webapp2.RequestHandler):
 	def get(self):
@@ -319,8 +338,6 @@ class Trending(webapp2.RequestHandler):
 			template_values['streams'] = trending_streams
 		else:
 			template_values['command'] = 'No trending streams found'
-
-		#TODO DISPLAY THE TRENDING STREAMS
 
 class TrendingShort(webapp2.RequestHandler):
 	def post(self):
@@ -376,7 +393,6 @@ def freshenTrends():
 
 	return
 
-
 #returns the top 3 trends
 def getTrends():
 	if len(popStreams) < 3
@@ -400,10 +416,6 @@ def sendTrends():
 	message.send()
 	self.redirect('/')
 
-
-'''
-EBD IF STEVE'S CHANGES
-'''
 class Social(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -440,9 +452,26 @@ class InviteFriendHandler(webapp2.RequestHandler):
 		message.send()
 		self.redirect('/')
 
+class DeleteStream(webapp2.RequestHandler):
+	def get(self):
+		print 'entered delete'
+		user = users.get_current_user()
+		if user is None:
+			login_url = users.create_login_url(self.request.path)
+			self.redirect(login_url)
+			return
+		
+		to_delete = self.request.get_all('delete')
+		print to_delete
+		#stream_del = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+		#stream_del[0].delete()
+		
+		time.sleep(0.1)
+		self.redirect('/manage')
+
 
 class NotFoundPageHandler(webapp2.RequestHandler):
-	def get(self):
+	def get(self, resource):
 		self.error(404)
 		user = users.get_current_user()
 		if user:
@@ -455,6 +484,12 @@ class NotFoundPageHandler(webapp2.RequestHandler):
       'url': url,
       'url_linktext': url_linktext,
   	}
+		# switch(resource) {
+		#	case 'snamediff':
+		#		template_values['error_msg'] = 'You already have a stream with that name, please pick another name for your new stream'
+		#		break;
+		#}
+		# error_msg = resource
 		template = JINJA_ENVIRONMENT.get_template('error.html')
 		self.response.write(template.render(template_values))	
 
@@ -474,9 +509,7 @@ application = webapp2.WSGIApplication([
 	('/trendingDaily', TrendingDaily),
 	('/social', Social),
 	('/upload', UploadHandler),
+	('/delete', DeleteStream),
 	('/serve/([^/]+)?', ServeHandler),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
-
-
-
