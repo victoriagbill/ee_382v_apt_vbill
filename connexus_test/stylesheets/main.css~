@@ -35,18 +35,22 @@ a:hover {
 header {
 	z-index: 1;
 }
-
 table {
 	width: 100%;
 	text-align: left;
 }
 
 td {
-	width: 250px;
+	width: 270px;
 }
 
 td+td {
 	width: auto;
+}
+
+#del {
+	width: 10%;
+	float: left;
 }
 
 #img-box {
