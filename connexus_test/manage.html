@@ -55,16 +55,6 @@
 					</form>
 
 
-		
-
-	
-		<!--</br></br>
-
-		<form action="/manage" method="post">
-			<input type="checkbox" name="delete" value="test">
-			<input type="submit" value="Delete checked">
-		</form> -->
-
 		</br>
 		</br>
 		<h3>Streams I subscribe to</h3></br>
@@ -76,10 +66,33 @@
 				<th>Views</th>
 				<th>Unsubscribe</th>
 			</tr>
-			<tr>
-				<td>Testname</td>
-			</tr>
+			{% for stream in subs %}
+				<tr>
+					<td>
+						<b><a href="/viewsingle/{{ stream }}">{{ stream }}<a></b>
+					</td>
+					<td>
+						{{ subs[stream][stream]['stream_urls'][-1][1] }}
+					</td>
+					<td>
+						{{ subs[stream][stream]['stream_len'] }}
+					</td>
+					<td>
+						{{ subs[stream][stream]['views'] }}
+					</td>
+					<td>
+						<form action="/manage" method="post">
+							<input type="checkbox" name="unsub" value="{{ stream }}">
+					</td>
+				</tr> 
+			{% endfor %}
 		</table>
+		</br>
+	
+						<input type="submit" value="Unsubscribe checked">
+					</form>
+
+	
 	{% endif %}
 	
 

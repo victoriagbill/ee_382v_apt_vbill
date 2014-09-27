@@ -87,6 +87,17 @@ class Manage(webapp2.RequestHandler):
 				template_values['streams'] = img_info
 			else:
 				template_values['command'] = 'Nothing here yet, either create or subscribe to streams to manage'
+
+			# add all_streams_subs for streams the user subscribes to
+			all_streams_subs = ImageStream.query(ImageStream.subscribers > '').fetch()
+			print all_streams_subs
+			this_sub = {}
+			for x in xrange(len(all_streams_subs)):
+				if any(user.nickname() in y for y in all_streams_subs[x].subscribers):
+					this_sub[all_streams_subs[x].stream_name] = all_streams_subs[x].info
+			if len(this_sub) > 0:
+				template_values['subs'] = this_sub
+			
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
@@ -99,18 +110,40 @@ class Manage(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 		
 	def post(self):
-		print 'entered post'
-		to_delete = self.request.get_all('delete')
-		print to_delete
-		del_stream = ImageStream.query(ImageStream.stream_name == to_delete[0]).fetch()
-		print del_stream
-		del_key = del_stream[0].key
-		print del_key
-		del_key.delete()
-		#del_stream[0].delete()
-		time.sleep(0.1)
-		self.redirect('/manage')
+		if self.request.get_all('delete'):
+			to_delete = self.request.get_all('delete')
+			if len(to_delete) < 2:
+				del_stream = ImageStream.query(ImageStream.stream_name == to_delete[0]).fetch()
+				print del_stream
+				del_key = del_stream[0].key
+				print del_key
+				del_key.delete()
+				time.sleep(0.1)
+				self.redirect('/manage')
+			else:
+				for x in xrange(len(to_delete)):
+					del_stream = ImageStream.query(ImageStream.stream_name == to_delete[x]).fetch()
+					del_key = del_stream[0].key
+					del_key.delete()
+				time.sleep(0.1)
+				self.redirect('/manage')
 
+		elif self.request.get_all('unsub'):
+			to_unsub = self.request.get_all('unsub')
+			if len(to_unsub) < 2:
+				unsub_stream = ImageStream.query(ImageStream.stream_name == to_unsub[0]).fetch()
+				print unsub_stream
+				unsub_stream[0].subscribers = [unicode('')]
+				unsub_stream[0].put()
+				time.sleep(0.1)
+				self.redirect('/manage')
+			else:
+				for x in xrange(len(to_delete)):
+					unsub_stream = ImageStream.query(ImageStream.stream_name == to_unsub[x]).fetch()
+					unsub_stream[0].subscribers = [unicode('')]
+					unsub_stream[0].put()
+				time.sleep(0.1)
+				self.redirect('/manage')
 
 class Create(webapp2.RequestHandler):
 	def get(self):
@@ -159,7 +192,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
 			img_info[stream_name]['stream_urls'] = [(images.get_serving_url(blob_info.key()), str(upload_time.date()))]
 			img_info[stream_name]['stream_len'] = 1
-			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers??????
+			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers?????? NEED TO ADD EMAIL TO SUBSCRIBERS, call InviteFriendHandler?
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
 			img_info[stream_name]['views'] = 1
 			invite_message = self.request.get('invite_message') 
@@ -230,10 +263,6 @@ class View(webapp2.RequestHandler):
 class ViewSingle(webapp2.RequestHandler):
 	#clicking on view tab should take you to view all streams page
 	def get(self, stream_name):
-		print 'entered single stream handler' #debugging, clean up later
-		print stream_name
-
-		# img_info[stream_name]['views'] += 1
 		# the create page serves as the MainHandler for the create stream UploadHandler, ServeHandler
 		upload_url = blobstore.create_upload_url('/upload')
 		user = users.get_current_user()
@@ -245,7 +274,6 @@ class ViewSingle(webapp2.RequestHandler):
 		    'url_linktext': url_linktext,
 				'upload_url': upload_url,
 			}
-
 			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
 			single_stream[0].info[stream_name]['views'] += 1
 			single_stream[0].put()
@@ -273,6 +301,20 @@ class ViewSingle(webapp2.RequestHandler):
 			}
 		template = JINJA_ENVIRONMENT.get_template('view_sstream.html')
 		self.response.write(template.render(template_values))
+
+	def post(self, stream_name):
+		# add to subscribers 
+		user = users.get_current_user()
+		if user:
+			sub_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+			sub_stream[0].subscribers.append(unicode(user.nickname()))
+			sub_stream[0].put()
+			time.sleep(0.1)
+			self.redirect('/viewsingle/'+stream_name)
+		else:
+			self.redirect('/')
+
+
 
 class Search(webapp2.RequestHandler):
 	def get(self):
@@ -367,7 +409,7 @@ class DeleteStream(webapp2.RequestHandler):
 
 
 class NotFoundPageHandler(webapp2.RequestHandler):
-	def get(self, resource):
+	def get(self):
 		self.error(404)
 		user = users.get_current_user()
 		if user:

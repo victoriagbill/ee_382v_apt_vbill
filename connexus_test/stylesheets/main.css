@@ -35,6 +35,15 @@ a:hover {
 header {
 	z-index: 1;
 }
+
+nav {
+	width: 100%;
+	float: center;
+	/*text-align: center;*/
+}
+
+
+
 table {
 	width: 100%;
 	text-align: left;
@@ -48,9 +57,18 @@ td+td {
 	width: auto;
 }
 
+textarea {
+	font-style: italic;
+}
+
 #del {
 	width: 10%;
 
+}
+
+#create-box {
+	width: 50%;
+	float: left;
 }
 
 #img-box {
@@ -68,9 +86,19 @@ td+td {
 }
 
 #add-box {
-	width: 80%;
-	float: left
+	width: 100%;
+	float: left;
+	/*border-style: solid;
+	border-width: 2px;
+	padding: 16px;*/
+	margin-bottom: 40px;
 }
+
+#sub-box {
+	width: 100%;
+	float: left;
+}
+
 
 section {
 	width: 25%;
