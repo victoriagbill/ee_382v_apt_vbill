@@ -312,15 +312,26 @@ class SearchStreams(webapp2.RequestHandler):
       'url_linktext': url_linktext,
   	}
 
+  		#get search results from stream name
 		search_results = ImageStream.query(ImageStream.stream_name == search_data).fetch()
 
-		img_info = {}
+		this_name = {}
+		print search_results
 		for x in xrange(len(search_results)):
-				img_info[search_results[x].stream_name] = search_results[x].info
+				this_name[search_results[x].stream_name] = search_results[x].info
 
-		#TODO FIX TAG SEARCH
-		#search_results.append( ImageStream.query(ImageStream.stream_name['tags'] == search_data).fetch() )
+		# add all_streams_tags for streams with those tags
+		all_streams_tags = ImageStream.query(ImageStream.tags > '').fetch()
+		print all_streams_tags
+		this_tag = {}
+		for x in xrange(len(all_streams_tags)):
+				if any(search_data in y for y in all_streams_tags[x].tags):
+					this_tag[all_streams_tags[x].stream_name] = all_streams_tags[x].info
+	
+		#combine name reslts with tag results
+		img_info = dict(this_name.items() + this_tag.items())
 
+		#reduce to 5 results if more than that
 		while (len(img_info)) > 5:
 			img_info.popitem()
 
@@ -388,18 +399,18 @@ def freshenTrends():
 	for x in xrange(len(all_streams)):
 		img_info[all_streams[x].stream_name] = all_streams[x].info
 
+
 	'''
 	Clear out times older than hour
 	'''
 	current_time = str(datetime.now())
-	#are python queues indexed?
 	for stream in img_info:
 		index = 0
-		converted_time = time.strptime(img_info[stream]['timestamps'][index], "%Y-%m-%d %H:%M:%S.%f" )
-		while (current_time- converted_time) > timedelta(hours = 1):
-			img_info[stream]['timestamps'].remove(converted_time)
+		converted_time = time.strptime(img_info.timestamps[index], "%Y-%m-%d %H:%M:%S.%f" )
+		while (current_time - converted_time) > timedelta(hours = 1):
+			img_info[stream].timestamps.remove(converted_time)
 			index += 1
-			converted_time = time.strptime( img_info[stream]['timestamps'][index], "%Y-%m-%d %H:%M:%S.%f" )
+			converted_time = time.strptime( img_info[stream].timestamps[index], "%Y-%m-%d %H:%M:%S.%f" )
 
 	'''
 	Get most viewed streams for past hour
