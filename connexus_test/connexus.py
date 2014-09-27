@@ -300,15 +300,32 @@ class SearchStreams(webapp2.RequestHandler):
 		search_data = self.request.get('cxus_search')
 		print search_data
 
+		user = users.get_current_user()
+		if user:
+			url = users.create_logout_url('/')
+			url_linktext = 'Logout'
+		else:
+			url = users.create_login_url(self.request.uri)
+			url_linktext = 'Login'
+		template_values = {
+      'url': url,
+      'url_linktext': url_linktext,
+  	}
 
 		search_results = ImageStream.query(ImageStream.stream_name == search_data).fetch()
+
+		img_info = {}
+		for x in xrange(len(search_results)):
+				img_info[search_results[x].stream_name] = search_results[x].info
+
 		#TODO FIX TAG SEARCH
 		#search_results.append( ImageStream.query(ImageStream.stream_name['tags'] == search_data).fetch() )
 
-		search_results.sort
+		while (len(img_info)) > 5:
+			img_info.popitem()
 
-		if (len(search_results)) > 0:
-			template_values['streams'] = search_results[:5][0]
+		if (len(img_info)) > 0:
+			template_values['streams'] = img_info  #TODO CHANGE TO ONLY SHOW 5
 		else:
 			template_values['command'] = 'No matching streams found'
 
