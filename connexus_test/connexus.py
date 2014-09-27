@@ -27,6 +27,8 @@ JINJA_ENVIRONMENT = jinja2.Environment(
   autoescape=True)
 
 
+popStreams = []
+
 class ImageStream(ndb.Model):
 	# models image stream with stream_name, owner, subscriber?
 	# need json dumb/property for all other info?
@@ -250,7 +252,7 @@ class ViewSingle(webapp2.RequestHandler):
 
 			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
 			single_stream[0].info[stream_name]['views'] += 1
-			single_stream[0].info[stream_name]['time_stamps'].append( str(datetime.now()) )
+			single_stream[0].info[stream_name]['timestamps'].append( str(datetime.now()) )
 			single_stream[0].put()
 			print single_stream
 
@@ -298,21 +300,17 @@ class SearchStreams(webapp2.RequestHandler):
 		search_data = self.request.get('cxus_search')
 		print search_data
 
-	
-		search_results = ImageStream.query(ImageStream.stream_name == search_data).fetch()
 
-		for tag in ImageStream.stream_name['tags']
-			search_results.append( ImageStream.query(ImageStream.stream_name['tags'][tag] == search_data).fetch() )
+		search_results = ImageStream.query(ImageStream.stream_name == search_data).fetch()
+		#TODO FIX TAG SEARCH
+		#search_results.append( ImageStream.query(ImageStream.stream_name['tags'] == search_data).fetch() )
 
 		search_results.sort
 
-		#return stream names/urls of top 5 streams
-		top_five_results = unique_search_list[:5][0]
-
-		if len(search_results) > 0:
-				template_values['streams'] = unique_search_list[:5][0]
-			else:
-				template_values['command'] = 'No matching streams found'
+		if (len(search_results)) > 0:
+			template_values['streams'] = search_results[:5][0]
+		else:
+			template_values['command'] = 'No matching streams found'
 
 		template = JINJA_ENVIRONMENT.get_template('search_results.html')
 		self.response.write(template.render(template_values))
@@ -341,12 +339,14 @@ class Trending(webapp2.RequestHandler):
 
 class TrendingShort(webapp2.RequestHandler):
 	def post(self):
+		print "Been 5 minutes"
 		freshenTrends()
 		if buttonPosition == short_update:
 			sendTrends() 
 
 class TrendingHourly(webapp2.RequestHandler):
 	def post(self):
+		print "Been an hour"
 		#CHECK LAST UPDATED TREND TIME BUTTON
 		if buttonPosition == hourly_update:
 			sendTrends() 
@@ -354,6 +354,7 @@ class TrendingHourly(webapp2.RequestHandler):
 
 class TrendingDaily(webapp2.RequestHandler):
 	def post(self):
+		print "Been a day"
 		#CHECK LAST UPDATED TREND TIME BUTTON
 		if buttonPosition == daily_update:
 			sendTrends() 
@@ -361,6 +362,7 @@ class TrendingDaily(webapp2.RequestHandler):
 
 #Called every 5 minutes to clean out old timestamps 
 def freshenTrends():
+	print "in freeshenTrends"
 	'''
 	Load up all the stream info
 	'''
@@ -369,35 +371,34 @@ def freshenTrends():
 	for x in xrange(len(all_streams)):
 		img_info[all_streams[x].stream_name] = all_streams[x].info
 
-
 	'''
 	Clear out times older than hour
 	'''
 	current_time = str(datetime.now())
 	#are python queues indexed?
-	for stream in img_info
+	for stream in img_info:
 		index = 0
-		converted_time = time.strptime(img_info[stream]['time_stamps']][index], "%Y-%m-%d %H:%M:%S.%f" )
+		converted_time = time.strptime(img_info[stream]['timestamps'][index], "%Y-%m-%d %H:%M:%S.%f" )
 		while (current_time- converted_time) > timedelta(hours = 1):
-			del img_info[stream]['time_stamps'].remove(converted_time)
+			img_info[stream]['timestamps'].remove(converted_time)
 			index += 1
-			converted_time = time.strptime( stream.string_timestamps[index], "%Y-%m-%d %H:%M:%S.%f" )
+			converted_time = time.strptime( img_info[stream]['timestamps'][index], "%Y-%m-%d %H:%M:%S.%f" )
 
 	'''
 	Get most viewed streams for past hour
 	'''
-	popStreams []
-	for stream in img_info:
-		popStreams[stream] = (len(img_info[stream]['time_stamps']), streamName)
+	for stream_name in img_info:
+		popStreams[stream] = (len(img_info[stream_name]['timestamps']), streamName)
 	popStreams.sort()
 
 	return
 
 #returns the top 3 trends
 def getTrends():
-	if len(popStreams) < 3
+	print "in getTrends"
+	if len(popStreams) < 3:
 		freshenTrends() 
-	return popStreams[0] : popStreams[3]
+	return popStreams[0:3]
 
 
 def sendTrends():
@@ -406,12 +407,12 @@ def sendTrends():
 	#TODO FIX SENDING EMAIL
 	message = mail.EmailMessage(sender=user.email(), subject="Trending Update")
 	message.to = user.email
-	message.body = "CONNEXUS.US\n" +
-		"Daily Trending Report\n" +
-		"------------------------------------------\n" +
-		"1. " + trending_streams[0] + "\n" +
-		"2. " + trending_streams[1] + "\n" +
-		"3. " + trending_streams[2] + "\n"
+	message.body = "CONNEXUS.US\n",
+	message.body += 	"Daily Trending Report\n",
+	message.body += "------------------------------------------\n",
+	message.body += "1. ", trending_streams[0], "\n",
+	message.body += "2. ", trending_streams[1], "\n",
+	message.body += "3. ", trending_streams[2], "\n"
 		#"Update Trending Prefrerences (Link)"
 	message.send()
 	self.redirect('/')
