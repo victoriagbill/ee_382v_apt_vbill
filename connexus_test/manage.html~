@@ -107,6 +107,6 @@
 		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
 	</footer>
 
-	</body>Datastore
+	</body>
 </html>
 {% endautoescape %}

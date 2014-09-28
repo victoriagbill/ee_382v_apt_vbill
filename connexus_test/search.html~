@@ -15,7 +15,7 @@
 
 	<p>Nothing here yet, this is the search page</p>
 
-	<form>
+	<form action="/searchstreams" method="POST">
 		Search streams:
 			<input type="search" name="cxus_search">
 			<input type="submit" value="Search">

@@ -1,0 +1,5 @@
+cron:
+- description: short summary job
+  url: /trendingShort
+  schedule: every 1 minutes
+

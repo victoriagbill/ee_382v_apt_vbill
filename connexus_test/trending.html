@@ -14,20 +14,25 @@
 	</nav>
 
 	<h3>Top 3 Trending Streams</h3>
-	<div id="img-box">
-	</div>
-	<div id="img-box">
-	</div>
+	</br>
+	{% if streams %}
+	{% for stream in streams %}
+		<div id="img-box">
+    	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b></br>
+			<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}"></br>
+		</div>
+	{% endfor %}
+	{% endif %}
 
-	<form action="" method="post">
-		<input type="checkbox" name="no_reports" values="no_reports">
-		<label for="no_reports">No reports</label></br>
-		<input type="checkbox" name="5mins" values="5mins">
-		<label for="5mins">Every 5 minutes</label></br>
-		<input type="checkbox" name="hour" values="hour">
-		<label for="hour">Every 1 hour</label></br>
-		<input type="checkbox" name="day" values="day">
-		<label for="day">Every day</label></br></br>
+	<form action="/uptrend" method="post">
+		<input type="radio" name="trending" value="no_reports">
+		No reports</br>
+		<input type="radio" name="trending" value="5mins">
+		Every 5 minutes</br>
+		<input type="radio" name="trending" value="hour">
+		Every 1 hour</br>
+		<input type="radio" name="trending" value="day">
+		Every day</br></br>
 		Update rate for email trending report</br></br>
 		<input type="submit" value="Update rate">
 	</form>

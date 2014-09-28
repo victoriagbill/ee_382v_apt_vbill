@@ -1,6 +1,6 @@
 import os
 import urllib
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 from google.appengine.api import users
@@ -26,6 +26,8 @@ JINJA_ENVIRONMENT = jinja2.Environment(
   extensions=['jinja2.ext.autoescape'],
   autoescape=True)
 
+popStreams = []
+trendingStreams = {}
 
 class ImageStream(ndb.Model):
 	# models image stream with stream_name, owner, subscriber?
@@ -37,6 +39,7 @@ class ImageStream(ndb.Model):
 	subscribers = ndb.StringProperty(repeated=True)
 	tags = ndb.StringProperty(repeated=True)
 	info = ndb.JsonProperty()
+	timestamps = ndb.StringProperty(repeated=True)
 
 class MainPage(webapp2.RequestHandler):
 	#main page = login, should check for login then dump to manage page?
@@ -129,19 +132,21 @@ class Manage(webapp2.RequestHandler):
 				self.redirect('/manage')
 
 		elif self.request.get_all('unsub'):
+			user = users.get_current_user()
 			to_unsub = self.request.get_all('unsub')
 			if len(to_unsub) < 2:
 				unsub_stream = ImageStream.query(ImageStream.stream_name == to_unsub[0]).fetch()
 				print unsub_stream
-				unsub_stream[0].subscribers = [unicode('')]
-				unsub_stream.put()
+				unsub_stream[0].subscribers.remove(user.email())
+				print unsub_stream
+				unsub_stream[0].put()
 				time.sleep(0.1)
 				self.redirect('/manage')
 			else:
-				for x in xrange(len(to_delete)):
+				for x in xrange(len(to_unsub)):
 					unsub_stream = ImageStream.query(ImageStream.stream_name == to_unsub[x]).fetch()
-					unsub_stream[0].subscribers = [unicode('')]
-					unsub_stream.put()
+					unsub_stream[0].subscribers.remove(user.nickname())
+					unsub_stream[0].put()
 				time.sleep(0.1)
 				self.redirect('/manage')
 
@@ -166,9 +171,7 @@ class Create(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('create_stream.html')
 		self.response.write(template.render(template_values))
 
-#class CreateStreamHandler(webapp2.RequestHandler):
-	#def post(self):
- 
+
 # Need to add tuple of date/time to image url, ndb.DateTimeProperty()? 
 # Or, use python datetime.datetime module
 
@@ -192,17 +195,16 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
 			img_info[stream_name]['stream_urls'] = [(images.get_serving_url(blob_info.key()), str(upload_time.date()))]
 			img_info[stream_name]['stream_len'] = 1
-			img_info[stream_name]['subscribers'] = [self.request.get('subscribers')] #need regex to parse multiple subscribers?????? NEED TO ADD EMAIL TO SUBSCRIBERS, call InviteFriendHandler?
+			if len(self.request.get('subscribers')) > 0:
+				img_info[stream_name]['subscribers'] = re.findall(r'[\w\.-]+@[\w\.-]+', self.request.get('subscribers'))
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
 			img_info[stream_name]['views'] = 1
 			invite_message = self.request.get('invite_message') 
-			data_stream = ImageStream(stream_name=self.request.get('stream_name'), owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info)
+			data_stream = ImageStream(stream_name=self.request.get('stream_name'), owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info, timestamps=[str(datetime.now())])
 			data_stream_key = data_stream.put()
-			#print img_info
-			#print images.get_serving_url(blob_info.key())
-			#print data_stream_key
+			print img_info
 			time.sleep(0.1)
-			self.redirect('/manage',permanent=True)
+			self.redirect('/manage')
 
 		elif self.request.get('file_name'):
 			print 'entered add image'
@@ -217,9 +219,11 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
 			single_stream[0].put()
 			print single_stream
-			print images.get_serving_url(blob_info.key())
-			time.sleep(0.1)
-			self.redirect('/viewsingle'+'/'+stream_name)
+			if len(single_stream[0].subscribers) > 0:
+				self.redirect('/emails/'+stream_name)
+			else:
+				time.sleep(0.1)
+				self.redirect('/viewsingle'+'/'+stream_name)
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -276,6 +280,7 @@ class ViewSingle(webapp2.RequestHandler):
 			}
 			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
 			single_stream[0].info[stream_name]['views'] += 1
+			single_stream[0].timestamps.append(str(datetime.now()))
 			single_stream[0].put()
 			print single_stream
 
@@ -307,7 +312,7 @@ class ViewSingle(webapp2.RequestHandler):
 		user = users.get_current_user()
 		if user:
 			sub_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
-			sub_stream[0].subscribers.append(unicode(user.nickname()))
+			sub_stream[0].subscribers.append(unicode(user.email()))
 			sub_stream[0].put()
 			time.sleep(0.1)
 			self.redirect('/viewsingle/'+stream_name)
@@ -332,12 +337,6 @@ class Search(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('search.html')
 		self.response.write(template.render(template_values))
 
-class SearchStreams(webapp2.RequestHandler):
-	def post(self):
-		search_data = self.request.get('cxus_search')
-		print search_data
-		self.redirect('/search')
-
 class Trending(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
@@ -351,6 +350,13 @@ class Trending(webapp2.RequestHandler):
       'url': url,
       'url_linktext': url_linktext,
   	}
+		print 'in trending, trendingStreams'
+		print trendingStreams
+		trendingStreams.clear()
+		print trendingStreams
+		freshenTrends()
+		if len(trendingStreams) > 0:
+			template_values['streams'] = trendingStreams
 		template = JINJA_ENVIRONMENT.get_template('trending.html')
 		self.response.write(template.render(template_values))
 
@@ -370,6 +376,72 @@ class Social(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('social.html')
 		self.response.write(template.render(template_values))
 
+class EmailUpdated(webapp2.RequestHandler):
+	def get(self, stream_name):
+		print 'entered emails'
+		#stream_name = self.request.get('stream_name')
+		subs_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+		for x in xrange(len(subs_stream[0].subscribers)):
+			if len(subs_stream[0].subscribers[x]) < 2:
+				continue
+			to_addr = subs_stream[0].subscribers[x]
+			if not mail.is_email_valid(to_addr):
+				# Return an error message...
+				pass
+			message = mail.EmailMessage(sender='victoriagbill@gmail.com', subject="Connexus stream updated")
+			message.to = to_addr
+			message.body = "An image was added to a stream you subscribe to! Check it out at connexus-vbill-sruth.appspot.com"
+			message.send()
+		self.redirect('/viewsingle/'+stream_name)
+
+
+class SearchStreams(webapp2.RequestHandler):
+	def post(self):
+		search_data = self.request.get('cxus_search')
+		print search_data
+
+		user = users.get_current_user()
+		if user:
+			url = users.create_logout_url('/')
+			url_linktext = 'Logout'
+		else:
+			url = users.create_login_url(self.request.uri)
+			url_linktext = 'Login'
+		template_values = {
+      'url': url,
+      'url_linktext': url_linktext,
+  	}
+
+  		#get search results from stream name
+		search_results = ImageStream.query(ImageStream.stream_name == search_data).fetch()
+
+		this_name = {}
+		print search_results
+		for x in xrange(len(search_results)):
+				this_name[search_results[x].stream_name] = search_results[x].info
+
+		# add all_streams_tags for streams with those tags
+		all_streams_tags = ImageStream.query(ImageStream.tags > '').fetch()
+		print all_streams_tags
+		this_tag = {}
+		for x in xrange(len(all_streams_tags)):
+				if any(search_data in y for y in all_streams_tags[x].tags):
+					this_tag[all_streams_tags[x].stream_name] = all_streams_tags[x].info
+
+		#combine name reslts with tag results
+		img_info = dict(this_name.items() + this_tag.items())
+
+		#reduce to 5 results if more than that
+		while (len(img_info)) > 5:
+			img_info.popitem()
+
+		if (len(img_info)) > 0:
+			template_values['streams'] = img_info  #TODO CHANGE TO ONLY SHOW 5
+		else:
+			template_values['command'] = 'No matching streams found'
+
+		template = JINJA_ENVIRONMENT.get_template('search_results.html')
+		self.response.write(template.render(template_values))
 
 
 class InviteFriendHandler(webapp2.RequestHandler):
@@ -389,6 +461,97 @@ class InviteFriendHandler(webapp2.RequestHandler):
 		message.body = "this is a test message"
 		message.send()
 		self.redirect('/')
+
+
+#Called every 5 minutes to clean out old timestamps 
+def freshenTrends():
+	print "in freeshenTrends"
+	'''
+	Load up all the stream info
+	'''
+
+	current_time = datetime.now()
+	print current_time
+	all_streams = ImageStream.query().fetch()
+	for x in xrange(len(all_streams)):
+		converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
+		print converted_time
+		while (current_time - converted_time) > timedelta(hours = 1):
+			all_streams[x].timestamps.remove(converted_time)
+			converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
+
+	popStreams = []
+	for x in xrange(len(all_streams)):
+		popStreams.append((len(all_streams[x].timestamps), all_streams[x].stream_name, all_streams[x].info))
+		print all_streams[x].stream_name
+		print len(all_streams[x].timestamps)
+	print popStreams[0]
+	popStreams2 = sorted(popStreams, key=lambda x: x[0], reverse=True)
+	print popStreams2[0][1]
+	print popStreams2[1][1]
+	print popStreams2[2][1]
+	for x in xrange(3):
+		trendingStreams[popStreams2[x][1]] = popStreams2[x][2]
+	print trendingStreams
+
+	return
+
+#returns the top 3 trends
+def getTrends():
+	print "in getTrends"
+	if len(popStreams2) < 3:
+		freshenTrends() 
+	return popStreams2[0:3][1]
+
+
+def sendTrends():
+	trending_streams = getTrends()
+	user = users.get_current_user()
+	message = mail.EmailMessage(sender="victoriagbill@gmail.com", subject="Trending Update")
+	message.to = user.email()
+	message.body = "CONNEX.US"
+	message.send()
+	#self.redirect('/')
+
+buttonPosition=''
+
+class UpdateTrending(webapp2.RequestHandler):
+	def post(self):
+		global buttonPosition
+		print 'pushed update trending button'
+		buttonPosition = self.request.get("trending")
+		print buttonPosition
+		self.redirect('/trending')
+
+class TrendingShort(webapp2.RequestHandler):
+	def get(self):
+		global buttonPosition
+		print "Been 5 minutes"
+		print buttonPosition
+		freshenTrends()
+		if buttonPosition == '5mins':
+			print "sending 5 minute trend update"
+			#self.redirect('/manage')
+			sendTrends() 
+			self.redirect('/trending')
+
+class TrendingHourly(webapp2.RequestHandler):
+	def get(self):
+		global buttonPosition
+		print "Been an hour"
+		#CHECK LAST UPDATED TREND TIME BUTTON
+		if buttonPosition == 'hour':
+			print "sending hourly"
+			#sendTrends() 
+
+class TrendingDaily(webapp2.RequestHandler):
+	def get(self):
+		global buttonPosition
+		print "Been a day"
+		#CHECK LAST UPDATED TREND TIME BUTTON
+		if buttonPosition == 'day':
+			print "sending daily"
+			#sendTrends() 
 
 class DeleteStream(webapp2.RequestHandler):
 	def get(self):
@@ -439,9 +602,14 @@ application = webapp2.WSGIApplication([
 	('/create', Create),
 	('/viewall', View),
 	('/viewsingle/([^/]+)?', ViewSingle),
+	('/emails/([^/]+)?', EmailUpdated),
 	('/search', Search),
 	('/searchstreams', SearchStreams),
 	('/trending', Trending),
+	('/uptrend', UpdateTrending),
+	('/trendingShort', TrendingShort),
+	('/trendingHourly', TrendingHourly),
+	('/trendingDaily', TrendingDaily),
 	('/social', Social),
 	('/upload', UploadHandler),
 	('/delete', DeleteStream),
