@@ -20,6 +20,7 @@
 		<div id="img-box">
     	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b></br>
 			<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}"></br>
+			<p>{{ views[0] }} views</br>in past hour</p>
 		</div>
 	{% endfor %}
 	{% endif %}
@@ -40,10 +41,7 @@
 	<footer>
 		</br>
 		<hr>
-		<form action="/invite" method="post">Testing email invite:
-		  <input value="invite_email" name="invite_email">
-		  <input type="submit" value="send">
-		</form>
+		<p>&copy; Victoria Bill and Steve Rutherford</p>
 
 		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
 	</footer>

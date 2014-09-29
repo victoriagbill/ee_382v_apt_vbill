@@ -20,6 +20,7 @@
 		<div id="img-box">
     	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b></br>
 			<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}"></br>
+			<p>{{ streams[stream][stream]['recent'] }} views</br>in past hour</p>
 		</div>
 	{% endfor %}
 	{% endif %}

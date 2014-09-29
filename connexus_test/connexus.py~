@@ -2,6 +2,7 @@ import os
 import urllib
 from datetime import datetime, timedelta
 import time
+import collections
 
 from google.appengine.api import users
 from google.appengine.api import mail, images
@@ -28,7 +29,9 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 popStreams = []
 popStreams2 = []
-trendingStreams = {}
+trendingStreams = collections.OrderedDict()
+buttonPosition=''
+#topViews = []
 
 class ImageStream(ndb.Model):
 	# models image stream with stream_name, owner, subscriber?
@@ -150,6 +153,8 @@ class Manage(webapp2.RequestHandler):
 					unsub_stream[0].put()
 				time.sleep(0.1)
 				self.redirect('/manage')
+		else:
+			self.redirect('/manage')
 
 class Create(webapp2.RequestHandler):
 	def get(self):
@@ -181,12 +186,16 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		#print upload_type
 		print 'entered upload'
 		if self.request.get('stream_name'):
+			stream_name = self.request.get('stream_name')
+			all_streams = ImageStream.query().fetch()
+			for x in xrange(len(all_streams)):
+				if all_streams[x].stream_name == stream_name:
+					print 'duplicate found'
+					self.redirect('/error/samename')
+					return
 			print 'entered create'
 			user = users.get_current_user()
-			print users.get_current_user()
-			print type(user.nickname())
 			img_info = {}
-			stream_name = self.request.get('stream_name')
 			img_info[stream_name] = {}
 			upload_time = datetime.now()
 			if self.get_uploads('cover_url'):
@@ -203,6 +212,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 				img_info[stream_name]['subscribers'] = re.findall(r'[\w\.-]+@[\w\.-]+', self.request.get('subscribers'))
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
 			img_info[stream_name]['views'] = 1
+			img_info[stream_name]['recent'] = 0
 			invite_message = self.request.get('invite_message') 
 			data_stream = ImageStream(stream_name=self.request.get('stream_name'), owner=user.nickname(), subscribers = [self.request.get('subscribers')], tags=[self.request.get('tags')], info = img_info, timestamps=[str(datetime.now())])
 			data_stream_key = data_stream.put()
@@ -228,6 +238,8 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			else:
 				time.sleep(0.1)
 				self.redirect('/viewsingle'+'/'+stream_name)
+		elif self.request.get('stream_name') == '':
+			self.redirect('/error/noname')
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -356,8 +368,8 @@ class Trending(webapp2.RequestHandler):
   	}
 		print 'in trending, trendingStreams'
 		print trendingStreams
-		trendingStreams.clear()
-		print trendingStreams
+		while len(trendingStreams) > 0:
+			trendingStreams.popitem(last=True)
 		freshenTrends()
 		if len(trendingStreams) > 0:
 			template_values['streams'] = trendingStreams
@@ -448,24 +460,6 @@ class SearchStreams(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 
 
-class InviteFriendHandler(webapp2.RequestHandler):
-	def post(self):
-		user = users.get_current_user()
-		if user is None:
-			login_url = users.create_login_url(self.request.path)
-			self.redirect(login_url)
-			return
-		to_addr = self.request.get("invite_email")
-		if not mail.is_email_valid(to_addr):
-  		# Return an error message...
-			pass
-
-		message = mail.EmailMessage(sender=user.email(), subject="test invite")
-		message.to = to_addr
-		message.body = "this is a test message"
-		message.send()
-		self.redirect('/')
-
 
 #Called every 5 minutes to clean out old timestamps 
 def freshenTrends():
@@ -478,14 +472,21 @@ def freshenTrends():
 	print current_time
 	all_streams = ImageStream.query().fetch()
 	for x in xrange(len(all_streams)):
-		converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
-		print converted_time
-		while (current_time - converted_time) > timedelta(hours = 1):
-			all_streams[x].timestamps.remove(str(converted_time))
+		if len(all_streams[x].timestamps) > 0:
+			print "primed"
 			converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
+			print converted_time
+			while (len(all_streams[x].timestamps) > 0) and ((current_time - converted_time) > timedelta(minutes = 5)):
+				print 'removed timestamps'
+				print all_streams[x].stream_name
+				all_streams[x].timestamps.remove(str(converted_time))
+				if len(all_streams[x].timestamps) > 0:
+					converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
+		all_streams[x].info['recent'] = len(all_streams[x].timestamps)
 		all_streams[x].put()
 
 	popStreams = []
+	popStreams2 = []
 	for x in xrange(len(all_streams)):
 		popStreams.append((len(all_streams[x].timestamps), all_streams[x].stream_name, all_streams[x].info))
 		print all_streams[x].stream_name
@@ -498,7 +499,6 @@ def freshenTrends():
 	for x in xrange(3):
 		trendingStreams[popStreams2[x][1]] = popStreams2[x][2]
 	print trendingStreams
-
 	return
 
 #returns the top 3 trends
@@ -508,8 +508,6 @@ def getTrends():
 		freshenTrends() 
 	return popStreams2[0:3]
 
-
-buttonPosition=''
 
 class UpdateTrending(webapp2.RequestHandler):
 	def post(self):
@@ -527,7 +525,7 @@ class TrendingShort(webapp2.RequestHandler):
 		freshenTrends()
 		if buttonPosition == '5mins':
 			print "sending 5 minute trend update"
-			update_emails = ['victoriagbill@gmail.com','steve.a.rutherford@gmail.com']
+			update_emails = ['victoriagbill@gmail.com','steve.a.rutherford@gmail.com','ragha@utexas.edu','natviv@cs.utexas.edu']
 			for x in xrange(len(update_emails)):
 				to_addr = update_emails[x]
 				if not mail.is_email_valid(to_addr):
@@ -543,10 +541,21 @@ class TrendingHourly(webapp2.RequestHandler):
 	def get(self):
 		global buttonPosition
 		print "Been an hour"
+		freshenTrends()
 		#CHECK LAST UPDATED TREND TIME BUTTON
 		if buttonPosition == 'hour':
 			print "sending hourly"
-			#sendTrends() 
+			update_emails = ['victoriagbill@gmail.com','steve.a.rutherford@gmail.com','ragha@utexas.edu','natviv@cs.utexas.edu']
+			for x in xrange(len(update_emails)):
+				to_addr = update_emails[x]
+				if not mail.is_email_valid(to_addr):
+					# Return an error message...
+					pass
+				message = mail.EmailMessage(sender='victoriagbill@gmail.com', subject="Connexus trending update")
+				message.to = to_addr
+				message.body = "These three streams are now trending!\n" + '\n' + trendingStreams.keys()[0]+ '\n' + trendingStreams.keys()[1] + '\n' + trendingStreams.keys()[2]
+				message.send()		
+		return
 
 class TrendingDaily(webapp2.RequestHandler):
 	def get(self):
@@ -555,7 +564,19 @@ class TrendingDaily(webapp2.RequestHandler):
 		#CHECK LAST UPDATED TREND TIME BUTTON
 		if buttonPosition == 'day':
 			print "sending daily"
-			#sendTrends() 
+			update_emails = ['victoriagbill@gmail.com','steve.a.rutherford@gmail.com','ragha@utexas.edu','natviv@cs.utexas.edu']
+			for x in xrange(len(update_emails)):
+				to_addr = update_emails[x]
+				if not mail.is_email_valid(to_addr):
+					# Return an error message...
+					pass
+				message = mail.EmailMessage(sender='victoriagbill@gmail.com', subject="Connexus trending update")
+				message.to = to_addr
+				message.body = "These three streams are now trending!\n" + '\n' + trendingStreams.keys()[0]+ '\n' + trendingStreams.keys()[1] + '\n' + trendingStreams.keys()[2]
+				message.send()		
+		return
+
+
 
 class DeleteStream(webapp2.RequestHandler):
 	def get(self):
@@ -575,6 +596,31 @@ class DeleteStream(webapp2.RequestHandler):
 		self.redirect('/manage')
 
 
+class ErrorHandler(webapp2.RequestHandler):
+	def get(self, message):
+		#self.error(404)
+		user = users.get_current_user()
+		if user:
+			url = users.create_logout_url('/')
+			url_linktext = 'Logout'
+		else:
+			url = users.create_login_url(self.request.uri)
+			url_linktext = 'Login'
+		template_values = {
+      'url': url,
+      'url_linktext': url_linktext,
+  	}
+		if message == 'samename':
+			template_values['error_msg'] = 'Error: that stream name is already being used, you must pick a unique name.'
+		elif message == 'noname':
+			template_values['error_msg'] = 'Error: you must enter at least a stream name to create a new stream.'
+		else:
+			template_values['error_msg'] = 'Error: you attempted to reach a stream or page that does not exist.'
+		
+		template = JINJA_ENVIRONMENT.get_template('error.html')
+		self.response.write(template.render(template_values))	
+
+
 class NotFoundPageHandler(webapp2.RequestHandler):
 	def get(self):
 		self.error(404)
@@ -589,19 +635,14 @@ class NotFoundPageHandler(webapp2.RequestHandler):
       'url': url,
       'url_linktext': url_linktext,
   	}
-		# switch(resource) {
-		#	case 'snamediff':
-		#		template_values['error_msg'] = 'You already have a stream with that name, please pick another name for your new stream'
-		#		break;
-		#}
-		# error_msg = resource
+		template_values['error_msg'] = 'Error: you attempted to reach a stream or page that does not exist. '
+		
 		template = JINJA_ENVIRONMENT.get_template('error.html')
 		self.response.write(template.render(template_values))	
 
 
 application = webapp2.WSGIApplication([
   ('/', MainPage),
-  ('/invite', InviteFriendHandler),
 	('/manage', Manage),
 	('/create', Create),
 	('/viewall', View),
@@ -618,6 +659,7 @@ application = webapp2.WSGIApplication([
 	('/upload', UploadHandler),
 	('/delete', DeleteStream),
 	('/serve/([^/]+)?', ServeHandler),
+	('/error/([^/]+)?', ErrorHandler),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
 
