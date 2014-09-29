@@ -20,7 +20,7 @@
   {% for stream in streams %}
 		<div id="img-box">
     	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b></br>
-			<img src="{{ streams[stream][stream]['cover'][0] }}"></br>
+			<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}"></br>
 		</div>
 	{% endfor %}
 	

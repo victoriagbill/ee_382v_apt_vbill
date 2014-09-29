@@ -12,6 +12,14 @@ handlers:
   script: connexus.application
   login: admin
 
+- url: /trendingHourly
+  script: connexus.application
+  login: admin
+
+- url: /trendingDaily
+  script: connexus.application
+  login: admin
+
 - url: /.*
   script: connexus.application
 

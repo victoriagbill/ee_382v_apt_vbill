@@ -1,10 +1,11 @@
 cron:
 - description: short summary job
   url: /trendingShort
-  schedule: every 1 minutes
-- description: hourly summary job
+  schedule: every 5 minutes
+- description: hourly trending summary
   url: /trendingHourly
-  schedule: every 1 hours
-- description: daily summary job
-  url: /trendingDaily
-  schedule: every 24 hours
+	schedule: every 1 hours
+- description: daily trending summary
+	url: /trendingDaily
+	schedule: every 24 hours
+

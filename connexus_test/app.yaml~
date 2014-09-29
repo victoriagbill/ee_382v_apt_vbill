@@ -8,6 +8,18 @@ handlers:
 - url: /stylesheets
   static_dir: stylesheets
 
+- url: /trendingShort
+  script: connexus.application
+	login: admin
+
+- url: /trendingHourly
+  script: connexus.application
+	login: admin
+
+- url: /trendingDaily
+  script: connexus.application
+	login: admin
+
 - url: /.*
   script: connexus.application
 

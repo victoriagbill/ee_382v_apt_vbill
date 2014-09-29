@@ -27,6 +27,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
   autoescape=True)
 
 popStreams = []
+popStreams2 = []
 trendingStreams = {}
 
 class ImageStream(ndb.Model):
@@ -184,17 +185,20 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			user = users.get_current_user()
 			print users.get_current_user()
 			print type(user.nickname())
-			
-			upload_files = self.get_uploads('cover_url')  # 'file' is file upload field in the form
-			stream_name = self.request.get('stream_name')
-			blob_info = upload_files[0]
-			print 'stream name = %s' % stream_name
 			img_info = {}
+			stream_name = self.request.get('stream_name')
 			img_info[stream_name] = {}
 			upload_time = datetime.now()
-			img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
-			img_info[stream_name]['stream_urls'] = [(images.get_serving_url(blob_info.key()), str(upload_time.date()))]
-			img_info[stream_name]['stream_len'] = 1
+			if self.get_uploads('cover_url'):
+				upload_files = self.get_uploads('cover_url')  # 'file' is file upload field in the form
+				blob_info = upload_files[0]
+				img_info[stream_name]['cover'] = (images.get_serving_url(blob_info.key()), str(upload_time.date()))
+				img_info[stream_name]['stream_urls'] = [(images.get_serving_url(blob_info.key()), str(upload_time.date()))]
+				img_info[stream_name]['stream_len'] = 1
+			else:
+				img_info[stream_name]['cover'] = ()
+				img_info[stream_name]['stream_urls'] = [(None, str(upload_time.date()))]
+				img_info[stream_name]['stream_len'] = 0
 			if len(self.request.get('subscribers')) > 0:
 				img_info[stream_name]['subscribers'] = re.findall(r'[\w\.-]+@[\w\.-]+', self.request.get('subscribers'))
 			img_info[stream_name]['tags'] = [self.request.get('tags')] # should this be a list or just string? need regex?
@@ -477,8 +481,9 @@ def freshenTrends():
 		converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
 		print converted_time
 		while (current_time - converted_time) > timedelta(hours = 1):
-			all_streams[x].timestamps.remove(converted_time)
+			all_streams[x].timestamps.remove(str(converted_time))
 			converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
+		all_streams[x].put()
 
 	popStreams = []
 	for x in xrange(len(all_streams)):
@@ -501,17 +506,8 @@ def getTrends():
 	print "in getTrends"
 	if len(popStreams2) < 3:
 		freshenTrends() 
-	return popStreams2[0:3][1]
+	return popStreams2[0:3]
 
-
-def sendTrends():
-	trending_streams = getTrends()
-	user = users.get_current_user()
-	message = mail.EmailMessage(sender="victoriagbill@gmail.com", subject="Trending Update")
-	message.to = user.email()
-	message.body = "CONNEX.US"
-	message.send()
-	#self.redirect('/')
 
 buttonPosition=''
 
@@ -531,9 +527,17 @@ class TrendingShort(webapp2.RequestHandler):
 		freshenTrends()
 		if buttonPosition == '5mins':
 			print "sending 5 minute trend update"
-			#self.redirect('/manage')
-			sendTrends() 
-			self.redirect('/trending')
+			update_emails = ['victoriagbill@gmail.com','steve.a.rutherford@gmail.com']
+			for x in xrange(len(update_emails)):
+				to_addr = update_emails[x]
+				if not mail.is_email_valid(to_addr):
+					# Return an error message...
+					pass
+				message = mail.EmailMessage(sender='victoriagbill@gmail.com', subject="Connexus trending update")
+				message.to = to_addr
+				message.body = "These three streams are now trending!\n" + '\n' + trendingStreams.keys()[0]+ '\n' + trendingStreams.keys()[1] + '\n' + trendingStreams.keys()[2]
+				message.send()		
+		return
 
 class TrendingHourly(webapp2.RequestHandler):
 	def get(self):

@@ -45,11 +45,13 @@
 	</div>
 
 	
+	<div id="sub-box">
 	<!-- subscribe button, change to get? -->
 	<form action="/viewsingle/{{ this_stream }}" method="post">
 		<input type="hidden" name="sub" value="{{ stream }}">
 		<input type="submit" value="Subscribe to this stream">
 	</form>
+	</div>
 
 
 
