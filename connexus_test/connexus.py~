@@ -482,7 +482,7 @@ def freshenTrends():
 				all_streams[x].timestamps.remove(str(converted_time))
 				if len(all_streams[x].timestamps) > 0:
 					converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
-		all_streams[x].info['recent'] = len(all_streams[x].timestamps)
+		all_streams[x].info[all_streams[x].stream_name]['recent'] = len(all_streams[x].timestamps)
 		all_streams[x].put()
 
 	popStreams = []

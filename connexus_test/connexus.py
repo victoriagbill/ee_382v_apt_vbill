@@ -476,7 +476,7 @@ def freshenTrends():
 			print "primed"
 			converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
 			print converted_time
-			while (len(all_streams[x].timestamps) > 0) and ((current_time - converted_time) > timedelta(minutes = 5)):
+			while (len(all_streams[x].timestamps) > 0) and ((current_time - converted_time) > timedelta(hours = 1)):
 				print 'removed timestamps'
 				print all_streams[x].stream_name
 				all_streams[x].timestamps.remove(str(converted_time))
