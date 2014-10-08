@@ -1,0 +1,32 @@
+commit ca925dbe2f4977b418d05673c93c5a8d20fcb978
+Author: victoria <victoriagbill@gmail.com>
+Date:   Tue Oct 7 19:56:00 2014 -0500
+
+    lab2 1.2 French version
+
+diff --git a/lab2_files/lab2_git/HelloWorld/HelloWorld.java b/lab2_files/lab2_git/HelloWorld/HelloWorld.java
+index b316ea1..17e0676 100644
+--- a/lab2_files/lab2_git/HelloWorld/HelloWorld.java
++++ b/lab2_files/lab2_git/HelloWorld/HelloWorld.java
+@@ -1,7 +1,7 @@
+ 
+ public class HelloWorld {
+ 	public static void main( String [] args){
+-		System.out.println("Hello World!");
++		System.out.println("Bonjour, monde!");
+ 	}
+ 
+ }
+diff --git a/lab2_files/lab2_git/HelloWorld/HelloWorld.java~ b/lab2_files/lab2_git/HelloWorld/HelloWorld.java~
+index 17e0676..b316ea1 100644
+--- a/lab2_files/lab2_git/HelloWorld/HelloWorld.java~
++++ b/lab2_files/lab2_git/HelloWorld/HelloWorld.java~
+@@ -1,7 +1,7 @@
+ 
+ public class HelloWorld {
+ 	public static void main( String [] args){
+-		System.out.println("Bonjour, monde!");
++		System.out.println("Hello World!");
+ 	}
+ 
+ }
