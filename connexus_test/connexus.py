@@ -224,23 +224,29 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		elif self.request.get('file_name'):
 			print 'entered add image'
 			stream_name = self.request.get('this_stream')
-			print stream_name			
-			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
-			blob_info = upload_files[0]
-			upload_time = datetime.now()
-			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
-			single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
-			single_stream[0].info[stream_name]['stream_len'] += 1
-			single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
-			single_stream[0].put()
-			print single_stream
-			if len(single_stream[0].subscribers) > 0:
-				self.redirect('/emails/'+stream_name)
+			print stream_name		
+			upload_files = self.get_uploads('new_image')	
+			if (len(upload_files) > 0): # 'file' is file upload field in the form
+				blob_info = upload_files[0]
+				upload_time = datetime.now()
+				single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+				single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
+				single_stream[0].info[stream_name]['stream_len'] += 1
+				single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
+				single_stream[0].put()
+				print single_stream
+				if len(single_stream[0].subscribers) > 0:
+					self.redirect('/emails/'+stream_name)
+				else:
+					time.sleep(0.1)
+					self.redirect('/viewsingle'+'/'+stream_name)
 			else:
 				time.sleep(0.1)
 				self.redirect('/viewsingle'+'/'+stream_name)
+
 		elif self.request.get('stream_name') == '':
 			self.redirect('/error/noname')
+
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -656,6 +662,7 @@ class refreshAutoComplete(webapp2.RequestHandler):
 		del auto_stream_names[:]
 		for x in xrange(len(all_streams)):
 			auto_stream_names.append(str(all_streams[x].stream_name))
+
 		#PUT ARRAY FOR STORAGE! SORT BEFOREHAND!!
 		return
 
