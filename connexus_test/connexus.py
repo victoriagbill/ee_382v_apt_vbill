@@ -29,6 +29,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 popStreams = []
 popStreams2 = []
+auto_stream_names = []
 trendingStreams = collections.OrderedDict()
 buttonPosition=''
 #topViews = []
@@ -313,6 +314,8 @@ class ViewSingle(webapp2.RequestHandler):
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 				template_values['this_stream'] = stream_name
+				print "HEREHEREHERE"
+				print stream_name
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
@@ -340,16 +343,23 @@ class ViewSingle(webapp2.RequestHandler):
 class Search(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
+		print auto_stream_names
+
 		if user:
 			url = users.create_logout_url('/')
 			url_linktext = 'Logout'
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
+
 		template_values = {
       'url': url,
-      'url_linktext': url_linktext,
+      'url_linktext': url_linktext
   	}
+  		if len(auto_stream_names) > 0:
+  			print auto_stream_names
+  			template_values['auto_stream_names'] = auto_stream_names
+
 		template = JINJA_ENVIRONMENT.get_template('search.html')
 		self.response.write(template.render(template_values))
 
@@ -452,7 +462,7 @@ class SearchStreams(webapp2.RequestHandler):
 			img_info.popitem()
 
 		if (len(img_info)) > 0:
-			template_values['streams'] = img_info  #TODO CHANGE TO ONLY SHOW 5
+			template_values['streams'] = img_info
 		else:
 			template_values['command'] = 'No matching streams found'
 
@@ -640,6 +650,15 @@ class NotFoundPageHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('error.html')
 		self.response.write(template.render(template_values))	
 
+class refreshAutoComplete(webapp2.RequestHandler):
+	def get(self):
+		all_streams = ImageStream.query().fetch()
+		del auto_stream_names[:]
+		for x in xrange(len(all_streams)):
+			auto_stream_names.append(str(all_streams[x].stream_name))
+		#PUT ARRAY FOR STORAGE! SORT BEFOREHAND!!
+		return
+
 
 application = webapp2.WSGIApplication([
   ('/', MainPage),
@@ -660,6 +679,7 @@ application = webapp2.WSGIApplication([
 	('/delete', DeleteStream),
 	('/serve/([^/]+)?', ServeHandler),
 	('/error/([^/]+)?', ErrorHandler),
+	('/refreshAutoComplete', refreshAutoComplete),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
 
