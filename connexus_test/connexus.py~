@@ -225,6 +225,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			stream_name = self.request.get('this_stream')
 			print stream_name			
 			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
+			print upload_files
 			blob_info = upload_files[0]
 			upload_time = datetime.now()
 			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
@@ -476,7 +477,7 @@ def freshenTrends():
 			print "primed"
 			converted_time = datetime.strptime( all_streams[x].timestamps[0], "%Y-%m-%d %H:%M:%S.%f" )
 			print converted_time
-			while (len(all_streams[x].timestamps) > 0) and ((current_time - converted_time) > timedelta(minutes = 5)):
+			while (len(all_streams[x].timestamps) > 0) and ((current_time - converted_time) > timedelta(hours = 1)):
 				print 'removed timestamps'
 				print all_streams[x].stream_name
 				all_streams[x].timestamps.remove(str(converted_time))

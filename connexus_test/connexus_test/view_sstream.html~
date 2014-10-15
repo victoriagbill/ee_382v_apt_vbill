@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
+</head>
+  <body>
+	<header>
+		<h2>Connex.us</h2>
+	</header>
+	
+	<nav>
+		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
+	</nav>
+
+	<p>
+	<h3>{{ this_stream }}</h3>	
+	</p>
+
+	{% for img_url in streams[this_stream][this_stream]['stream_urls'] %}
+		<div id="img-box">
+	  	<img class="thumb" src="{{ img_url[0] }}"></br></br>
+		</div>
+	{% endfor %}
+	
+	{% if streams[this_stream][this_stream]['stream_len'] > 3 %}
+	{% if not more_check %}
+		<form>
+			<input type="hidden" name="more_check" value="1">
+			<input type="submit" value="View all">
+		</form>
+	{% endif %}
+	{% endif %}
+
+
+	<div id="add-box">
+		<form action="{{ upload_url }}" method="POST" enctype="multipart/form-data">
+			<h4>Add an image to this stream<!--<br>(Can be empty)--></h4>
+			<input type="hidden" name="this_stream" value="{{ this_stream }}">
+			<input type="text" name="file_name" value="File Name"><br>
+			<input type="text" name="comments" value="Comments"><br>
+			<input type="file" name="new_image"><br>
+			<input type="submit" value="Add image">
+		</form>
+	</div>
+
+	
+	<div id="sub-box">
+	<!-- subscribe button, change to get? -->
+	<form action="/viewsingle/{{ this_stream }}" method="post">
+		<input type="hidden" name="sub" value="{{ stream }}">
+		<input type="submit" value="Subscribe to this stream">
+	</form>
+	</div>
+
+
+
+	<footer>
+		</br>
+		<hr>
+		<form action="/invite" method="post">Testing email invite:
+		  <input value="invite_email" name="invite_email">
+		  <input type="submit" value="send">
+		</form>
+
+		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
+	</footer>
+
+	</body>
+</html>
+{% endautoescape %}

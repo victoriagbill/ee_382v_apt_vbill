@@ -10,15 +10,18 @@ handlers:
 
 - url: /trendingShort
   script: connexus.application
-	login: admin
+  login: admin
 
 - url: /trendingHourly
   script: connexus.application
-	login: admin
+  login: admin
 
 - url: /trendingDaily
   script: connexus.application
-	login: admin
+  login: admin
+
+- url: /js
+  static_dir: js
 
 - url: /.*
   script: connexus.application

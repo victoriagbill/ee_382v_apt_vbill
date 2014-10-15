@@ -1,0 +1,30 @@
+application: connexus-vbill-sruth
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /stylesheets
+  static_dir: stylesheets
+
+- url: /trendingShort
+  script: connexus.application
+	login: admin
+
+- url: /trendingHourly
+  script: connexus.application
+	login: admin
+
+- url: /trendingDaily
+  script: connexus.application
+	login: admin
+
+- url: /.*
+  script: connexus.application
+
+libraries:
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest

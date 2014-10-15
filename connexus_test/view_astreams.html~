@@ -2,7 +2,13 @@
 {% autoescape true %}
 <html>
 <head>
-  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
+  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css" /> 
+	<script type="text/javascript" src="/js/jquery-1.11.0.min.js"></script> 
+	<!--<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script> -->
+	<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> -->
+	<script type="text/javascript" src="/js/lightbox.min.js"></script>
+	<script type="text/javascript" src="/js/scripts.js"></script>
+	<link rel="stylesheet" href="/css/lightbox.css" type="text/css" media="screen" />
 </head>
   <body>
 	<header>
@@ -19,8 +25,12 @@
 	
   {% for stream in streams %}
 		<div id="img-box">
-    	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b></br>
-			<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}"></br>
+    	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b>
+			</br>
+			<!--<a href="{{ streams[stream][stream]['cover'][0] }}" data-lightbox="{{ stream }}"><img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}" /></a> -->
+			<a href="{{ streams[stream][stream]['cover'][0] }}" data-lightbox="{{ stream }}" rel="lightbox"><img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}" /></a>
+			<!--<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}" /> -->
+			</br>
 		</div>
 	{% endfor %}
 	
@@ -28,10 +38,7 @@
 	<footer>
 		</br>
 		<hr>
-		<form action="/invite" method="post">Testing email invite:
-		  <input value="invite_email" name="invite_email">
-		  <input type="submit" value="send">
-		</form>
+		<p>&copy; Victoria Bill and Steve Rutherford</p>
 
 		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
 	</footer>

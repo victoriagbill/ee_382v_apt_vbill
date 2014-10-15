@@ -225,6 +225,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			stream_name = self.request.get('this_stream')
 			print stream_name			
 			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
+			print upload_files
 			blob_info = upload_files[0]
 			upload_time = datetime.now()
 			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
@@ -232,6 +233,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 			single_stream[0].info[stream_name]['stream_len'] += 1
 			single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
 			single_stream[0].put()
+			time.sleep(0.1)
 			print single_stream
 			if len(single_stream[0].subscribers) > 0:
 				self.redirect('/emails/'+stream_name)
