@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
+</head>
+  <body>
+	<div id="header">
+		<h2>Connex.us</h2>
+	</div>
+	
+	<div id="nav">
+		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
+	</div>
+
+	<p>Nothing here yet, this is the social page</p>
+
+	</br>
+	<hr>
+
+  <p>&copy; Victoria Bill and Steve Rutherford</p>
+
+  <a href="{{ url|safe }}">{{ url_linktext }}</a> 
+
+	</body>
+</html>
+{% endautoescape %}

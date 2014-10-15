@@ -1,0 +1,27 @@
+cron:
+- description: short summary job
+  url: /trendingShort
+  schedule: every 5 minutes
+- description: hourly trending summary
+  url: /trendingHourly
+  schedule: every 1 hours
+- description: daily trending summary
+  url: /trendingDaily
+  schedule: every 24 hours
+- description: hourly search autocomplete collection
+  url: /refreshAutoComplete
+  schedule: every 1 hours
+
+  {% for stream_name in stream_names %}
+       			{{ stream_name|safe }}
+			{% endfor %}
+
+
+	$(function() {
+var complete_names = [ 
+"test999"
+];
+$("#cxus_search").autocomplete({
+source: complete_names
+});
+});
