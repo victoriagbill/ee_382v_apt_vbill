@@ -30,21 +30,78 @@
 				<th>Delete</th>
 			</tr>
 			{% for stream in streams %}
-				<tr><td>
-					<b><a href="/viewsingle/{{ stream }}">{{ stream }}<a></b>
-				</td></tr> 		
+				<tr>
+					<td>
+						<b><a href="/viewsingle/{{ stream }}">{{ stream }}<a></b>
+					</td>
+					<td>
+						{{ streams[stream][stream]['stream_urls'][-1][1] }}
+					</td>
+					<td>
+						{{ streams[stream][stream]['stream_len'] }}
+					</td>
+					<td>
+						<form action="/manage" method="post">
+							<input type="checkbox" name="delete" value="{{ stream }}">
+							
+					</td>
+				</tr> 
+			{% endfor %}
+			
+		</table>
+		</br>
+
+						<input type="submit" value="Delete checked">
+					</form>
+	{% endif %}
+
+	{% if subs %}
+		</br>
+		</br>
+		<h3>Streams I subscribe to</h3></br>
+
+		<table rules="cols" frame="mhs">
+			<tr>
+				<th>Name</th>
+				<th>Last New Picture</th>
+				<th>Number of Pictures</th>
+				<th>Views</th>
+				<th>Unsubscribe</th>
+			</tr>
+			{% for stream in subs %}
+				<tr>
+					<td>
+						<b><a href="/viewsingle/{{ stream }}">{{ stream }}<a></b>
+					</td>
+					<td>
+						{{ subs[stream][stream]['stream_urls'][-1][1] }}
+					</td>
+					<td>
+						{{ subs[stream][stream]['stream_len'] }}
+					</td>
+					<td>
+						{{ subs[stream][stream]['views'] }}
+					</td>
+					<td>
+						<form action="/manage" method="post">
+							<input type="checkbox" name="unsub" value="{{ stream }}">
+					</td>
+				</tr> 
 			{% endfor %}
 		</table>
+		</br>
+	
+						<input type="submit" value="Unsubscribe checked">
+					</form>
+
+	
 	{% endif %}
 	
 
 	<footer>
 		</br>
 		<hr>
-		<form action="/invite" method="post">Testing email invite:
-		  <input value="invite_email" name="invite_email">
-		  <input type="submit" value="send">
-		</form>
+		<p>&copy; Victoria Bill and Steve Rutherford</p>
 
 		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
 	</footer>

@@ -5,25 +5,47 @@
   <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
 </head>
   <body>
-	<div id="header">
+	<header>
 		<h2>Connex.us</h2>
-	</div>
+	</header>
 	
-	<div id="nav">
-		<h3><a href="#">Manage</a> | <a href="/create">Create</a> | <a href="/viewsingle">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
-	</div>
+	<nav>
+		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
+	</nav>
 
-	<p>Nothing here yet, this is the trending page</p>
-
+	<h3>Top 3 Trending Streams</h3>
 	</br>
-	<hr>
+	{% if streams %}
+	{% for stream in streams %}
+		<div id="img-box">
+    	<b><a href="/viewsingle/{{ stream }}">{{ stream }}</a></b></br>
+			<img class="thumb" src="{{ streams[stream][stream]['cover'][0] }}"></br>
+			<p>{{ views[0] }} views</br>in past hour</p>
+		</div>
+	{% endfor %}
+	{% endif %}
 
-  <form action="/invite" method="post">Testing email invite:
-    <input value="invite_email" name="invite_email">
-    <input type="submit" value="send">
-  </form>
+	<form action="/uptrend" method="post">
+		<input type="radio" name="trending" value="no_reports">
+		No reports</br>
+		<input type="radio" name="trending" value="5mins">
+		Every 5 minutes</br>
+		<input type="radio" name="trending" value="hour">
+		Every 1 hour</br>
+		<input type="radio" name="trending" value="day">
+		Every day</br></br>
+		Update rate for email trending report</br></br>
+		<input type="submit" value="Update rate">
+	</form>
 
-  <a href="{{ url|safe }}">{{ url_linktext }}</a> 
+	<footer>
+		</br>
+		<hr>
+		<p>&copy; Victoria Bill and Steve Rutherford</p>
+
+		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
+	</footer>
+
 
 	</body>
 </html>
