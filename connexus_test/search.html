@@ -10,7 +10,10 @@
 	$(function() {
     	var names = {{ auto_stream_names|safe }};
        	$("#cxus_search_id").autocomplete({
-               source: names
+               source: function(request, response) {
+               	var results = $.ui.autocomplete.filter(names, request.term);
+               	response(results.slice(0,20));
+               }
         });
     });  
 </script>
