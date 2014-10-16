@@ -8,6 +8,9 @@ handlers:
 - url: /stylesheets
   static_dir: stylesheets
 
+- url: /css
+  static_dir: css
+
 - url: /trendingShort
   script: connexus.application
   login: admin
