@@ -179,8 +179,6 @@ class Create(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 
 
-# Need to add tuple of date/time to image url, ndb.DateTimeProperty()? 
-# Or, use python datetime.datetime module
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
