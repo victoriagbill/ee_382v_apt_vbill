@@ -4,6 +4,9 @@ runtime: python27
 api_version: 1
 threadsafe: true
 
+builtins:
+- deferred: on
+
 handlers:
 - url: /stylesheets
   static_dir: stylesheets
@@ -25,6 +28,17 @@ handlers:
 
 - url: /js
   static_dir: js
+
+- url: /img
+  static_dir: img
+
+- url: /ui
+  static_dir: ui
+
+- url: /(favicon\.ico|robots\.txt)
+  static_files: static/\1
+  upload: static/(.*)
+  expiration: '1d'
 
 - url: /.*
   script: connexus.application

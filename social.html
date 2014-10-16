@@ -1,26 +1,43 @@
 <!DOCTYPE html>
 {% autoescape true %}
-<html>
+<html lang="en-us">
 <head>
-  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script type="text/javascript" src="/js/jquery-1.11.0.min.js"></script> 
+	<script type="text/javascript" src="/js/lightbox.min.js"></script>
+	<script type="text/javascript" src="/js/scripts.js"></script>
+	<!--<link rel="stylesheet" href="/css/screen.css" /> -->
+	<link rel="stylesheet" href="/css/lightbox.css" /> 
+	<!-- Bootstrap styles, makes the buttons nice, just copy that into my css? don't like other elements... -->
+	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<!-- CSS to style the file input field as button and adjust the Bootstrap progress bars -->
+	<link rel="stylesheet" href="/css/jquery.fileupload.css">
+	<link rel="stylesheet" href="/css/jquery.fileupload-ui.css">
+	<link rel="stylesheet" href="/stylesheets/main.css" /> 
 </head>
   <body>
-	<div id="header">
+	<header>
 		<h2>Connex.us</h2>
-	</div>
+	</header>
 	
-	<div id="nav">
+	<nav>
 		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
-	</div>
+	</nav>
 
+	</br>
 	<p>Nothing here yet, this is the social page</p>
 
 	</br>
-	<hr>
 
-  <p>&copy; Victoria Bill and Steve Rutherford</p>
 
-  <a href="{{ url|safe }}">{{ url_linktext }}</a> 
+  <footer>
+		</br>
+		<hr>
+		<p>&copy; Victoria Bill and Steve Rutherford</p>
+
+		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
+	</footer>
 
 	</body>
 </html>

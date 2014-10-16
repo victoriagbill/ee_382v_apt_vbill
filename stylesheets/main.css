@@ -1,7 +1,7 @@
 body {
   font-family: Verdana, sans-serif;
   /*background-color: #DDDDDD;*/
-	padding-left: 30px;
+	padding-left: 28px;
 	padding-right: 30px;
 }
 
@@ -34,15 +34,28 @@ a:hover {
 
 header {
 	z-index: 1;
+	text-align: center;
+	font-size: 40px;
+	border-bottom: 2px solid black;
+	width: 70%;
+	margin-left: 15%;
 }
+
+
 
 nav {
 	width: 100%;
 	float: center;
-	/*text-align: center;*/
+	text-align: center;
+	font-size: 34px;
+	word-spacing: 30px;
+	margin-bottom: 30px;
+	font-style: bold;
 }
 
-
+p {
+	width: 100%;
+}
 
 table {
 	width: 100%;
@@ -67,13 +80,17 @@ textarea {
 }
 
 #create-box {
-	width: 50%;
+	width: 45%;
 	float: left;
+	padding-right: 10%;
 }
 
 #img-box {
 	width: 25%;
 	float: left;
+	margin-bottom: 40px;
+	border-radius: 4px;
+	text-align: center;
 }
 
 .thumb {

@@ -2,7 +2,26 @@
 {% autoescape true %}
 <html>
 <head>
-  <link type="text/css" rel="stylesheet" href="/stylesheets/main.css">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+	<script type="text/javascript" src="/js/lightbox.min.js"></script>
+	<!-- Bootstrap styles, makes the buttons nice, just copy that into my css? don't like other elements... -->
+	<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/stylesheets/main.css" />
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+  <script type="text/javascript">
+	$(function() {
+    	var names = {{ auto_stream_names|safe }};
+       	$("#cxus_search_id").autocomplete({
+               source: function(request, response) {
+               	var results = $.ui.autocomplete.filter(names, request.term);
+               	response(results.slice(0,20));
+               }
+        });
+    });  
+</script>
 </head>
   <body>
 	<header>
@@ -13,25 +32,29 @@
 		<h3><a href="/manage">Manage</a> | <a href="/create">Create</a> | <a href="/viewall">View</a> | <a href="/search">Search</a> | <a href="/trending">Trending</a> | <a href="/social">Social</a> </h3>
 	</nav>
 
-	</br>
 
-	<form action="/searchstreams" method="POST">
+	</br></br>
+	<!--<form action="/searchstreams" method="POST">
 		Search streams:
-			<input type="search" name="cxus_search">
+			<input type="search" name="cxus_search" id="cxus_search_id" placeholder="Insert name...">
 			<input type="submit" value="Search">
-	</form>
+	</form>  -->
+
+	<form class="navbar-form navbar-left" role="search" action="/searchstreams" method="POST">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search names">
+        </div>
+        <button type="submit" class="btn btn-default">Search</button>
+      </form>
+
 
 	<footer>
 		</br>
 		<hr>
-		<form action="/invite" method="post">Testing email invite:
-		  <input value="invite_email" name="invite_email">
-		  <input type="submit" value="send">
-		</form>
+		<p>&copy; Victoria Bill and Steve Rutherford</p>
 
 		<a href="{{ url|safe }}">{{ url_linktext }}</a> 
 	</footer>
-
 
 	</body>
 </html>

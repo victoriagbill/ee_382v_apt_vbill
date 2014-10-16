@@ -1,3 +1,6 @@
+# Connexus website and application for EE 382V, Fall 2014
+# Created by Victoria Bill and Steve Rutherford
+from __future__ import with_statement
 import os
 import urllib
 from datetime import datetime, timedelta
@@ -5,7 +8,7 @@ import time
 import collections
 
 from google.appengine.api import users
-from google.appengine.api import mail, images
+from google.appengine.api import mail, images, files
 from google.appengine.ext import ndb
 from google.appengine.ext import blobstore, deferred
 from google.appengine.ext.webapp import blobstore_handlers
@@ -15,12 +18,17 @@ import webapp2
 import re
 import json
 
+WEBSITE = '/viewsingle/' #=redirect after upload, changed to viewsingle? need to add stream name somehow, in UploadHandler2
+MIN_FILE_SIZE = 1  # bytes
+MAX_FILE_SIZE = 5000000  # bytes
+IMAGE_TYPES = re.compile('image/(gif|p?jpeg|(x-)?png)')
+ACCEPT_FILE_TYPES = IMAGE_TYPES
+THUMBNAIL_MODIFICATOR = '=s80'  # max width / height
+EXPIRATION_TIME = 300  # seconds
 
-# img_info = {} #for now this is empty at startup, when app is deployed need to figure out how to store img_info to datastore and retrieve for each user
 
 def cleanup(blob_keys):
     blobstore.delete(blob_keys)
-
 
 JINJA_ENVIRONMENT = jinja2.Environment(
 	loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -29,6 +37,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 
 popStreams = []
 popStreams2 = []
+auto_stream_names = []
 trendingStreams = collections.OrderedDict()
 buttonPosition=''
 #topViews = []
@@ -69,7 +78,7 @@ class MainPage(webapp2.RequestHandler):
 				'url': url,
  				'url_linktext': url_linktext,
  			}
-			template = JINJA_ENVIRONMENT.get_template('index.html')
+			template = JINJA_ENVIRONMENT.get_template('cnxs_index.html')
  			self.response.write(template.render(template_values))
 
 
@@ -178,8 +187,6 @@ class Create(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 
 
-# Need to add tuple of date/time to image url, ndb.DateTimeProperty()? 
-# Or, use python datetime.datetime module
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
@@ -223,25 +230,161 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 		elif self.request.get('file_name'):
 			print 'entered add image'
 			stream_name = self.request.get('this_stream')
-			print stream_name			
-			upload_files = self.get_uploads('new_image')  # 'file' is file upload field in the form
-			print upload_files
-			blob_info = upload_files[0]
-			upload_time = datetime.now()
-			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
-			single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
-			single_stream[0].info[stream_name]['stream_len'] += 1
-			single_stream[0].info[stream_name]['comments'] = [self.request.get('comments')] # needs to be tuple to find associated image?
-			single_stream[0].put()
-			time.sleep(0.1)
-			print single_stream
-			if len(single_stream[0].subscribers) > 0:
-				self.redirect('/emails/'+stream_name)
+			print stream_name		
+			upload_files = self.get_uploads('new_image')	
+			if (len(upload_files) > 0): # 'file' is file upload field in the form
+				blob_info = upload_files[0]
+				upload_time = datetime.now()
+				single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+				single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_info.key()), str(upload_time.date())))
+				single_stream[0].info[stream_name]['stream_len'] += 1
+				single_stream[0].put()
+				time.sleep(0.1)
+				print single_stream
+				if len(single_stream[0].subscribers) > 0:
+					self.redirect('/emails/'+stream_name)
+				else:
+					time.sleep(0.1)
+					self.redirect('/viewsingle'+'/'+stream_name)
 			else:
 				time.sleep(0.1)
 				self.redirect('/viewsingle'+'/'+stream_name)
+
 		elif self.request.get('stream_name') == '':
 			self.redirect('/error/noname')
+
+
+class UploadHandler2(blobstore_handlers.BlobstoreUploadHandler):
+	#def initialize(self, request, response):
+		#super(UploadHandler2, self).intialize(request, response)
+		#self.response.headers['Access-Control-Allow-Origin'] = '*'
+		#self.response.headers['Access-Control-Allow-Methods'] = 'OPTIONS, HEAD, GET, POST, PUT, DELETE'
+		#self.response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Content-Range, Content-Disposition'
+
+	def validate(self, file):
+		if file['size'] < MIN_FILE_SIZE:
+			file['error'] = 'File is too small'
+		elif file['size'] > MAX_FILE_SIZE:
+			file['error'] = 'File is too big'
+		elif not ACCEPT_FILE_TYPES.match(file['type']):
+			file['error'] = 'Filetype not allowed'
+		else:
+			return True
+		return False
+
+	def get_file_size(self, file):
+		file.seek(0,2)
+		size = file.tell()
+		file.seek(0)
+		return size
+
+	def write_blob(self, data, info):
+		blob = files.blobstore.create(mime_type=info['type'], _blobinfo_uploaded_filename=info['name'])
+		with files.open(blob, 'a') as f:
+			f.write(data)
+		files.finalize(blob)
+		return files.blobstore.get_blob_key(blob)
+
+	def handle_upload(self):
+		results = []
+		blob_keys = []
+		stream_name = self.request.get('this_stream')
+		print stream_name
+		for name, fieldStorage in self.request.POST.items():
+			# just got rid of fieldStorage requirements
+			if name == 'this_stream':
+				print 'just found hidden input'
+				continue
+			# what is fieldStorage?
+			print 'in handle upload '
+			print 'name is'
+			print name
+			print 'fieldStorage = ' 
+			print type(fieldStorage)
+			print fieldStorage
+			result = {}
+			# put img_info = {} here? fill in?!??? info for other pages
+			img_info = {}
+			result['name'] = re.sub(r'^.*\\','',fieldStorage.filename)
+			result['type'] = fieldStorage.type
+			result['size'] = self.get_file_size(fieldStorage.file)
+			print 'size is'
+			print result['size']
+			print 'type is'
+			print result['type']
+			if self.validate(result):
+				print 'passed file validate'
+				blob_key = str(self.write_blob(fieldStorage.value, result))
+				blob_keys.append(blob_key)
+				result['deleteType'] = 'DELETE'
+				result['deleteUrl'] = self.request.host_url+'/?key='+urllib.quote(blob_key,'')
+				single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+				upload_time = datetime.now()
+				single_stream[0].info[stream_name]['stream_urls'].append((images.get_serving_url(blob_key), str(upload_time.date())))
+				single_stream[0].info[stream_name]['stream_len'] += 1
+				single_stream[0].put()
+				time.sleep(0.1)
+				print 'single_stream'
+				print single_stream
+				if (IMAGE_TYPES.match(result['type'])):
+					try:
+						result['url'] = images.get_serving_url(blob_key)
+						result['thumbnailUrl'] = result['url']+THUMBNAIL_MODIFICATOR
+						print 'SUCCESS'
+					except:
+						pass		
+
+				if not 'url' in result:
+					print 'what am I doing in here'
+					result['url'] = self.request.host_url+'/'+blob_key+'/'+urllib.quote(result['name'].encode('utf-8'),'')
+
+			results.append(result)
+		#deferred.defer(cleanup, blob_keys, _countdown=EXPIRATION_TIME)
+		return results
+
+	def options(self):
+		pass
+	def head(self):
+		pass
+	'''
+	def get(self):
+		print 'entered new get'
+		stream_name = self.request.get('this_stream')
+		print stream_name
+		self.redirect(WEBSITE + stream_name)'''
+
+	def post(self):
+		print 'entered new post!'
+		print 'HI'
+		stream_name = self.request.get('this_stream')
+		print 'stream name found = ' + stream_name
+		if (self.request.get('_method') == 'DELETE'):
+			return self.delete()
+		result = {'files': self.handle_upload()}
+		print 'result from post is'
+		print result
+		s = json.dumps(result, separators=(',',':'))
+		print s
+		redirect = self.request.get('redirect')
+		if redirect:
+			return self.redirect(str(redirect.replace('%s', urllib.quote(s,''),1)))
+		if 'application/json' in self.request.headers.get('Accept'):
+			self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(s)
+		#time.sleep(0.1)
+		#self.redirect('/viewsingle/'+stream_name)
+
+	'''
+	def delete(self):
+		key = self.request.get('key') or ''
+		blobstore.delete(key)
+		# deletes key then puts to blobstore to delete????
+		# can we change this to our version of delete
+		s = json.dumps({key: True}, separators=(',',':'))
+		if 'application/json' in self.request.headers.get('Accept'):
+			self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(s)'''
+	
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -252,6 +395,21 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
 		img_url = images.get_serving_url(blob_info.key())
 		self.send_blob(blob_info)
 		#self.redirect('/manage')
+
+
+class DownloadHandler(blobstore_handlers.BlobstoreDownloadHandler):
+    def get(self, key, filename):
+        if not blobstore.get(key):
+            self.error(404)
+        else:
+            # Prevent browsers from MIME-sniffing the content-type:
+            self.response.headers['X-Content-Type-Options'] = 'nosniff'
+            # Cache for the expiration time:
+            self.response.headers['Cache-Control'] = 'public,max-age=%d' % EXPIRATION_TIME
+            # Send the file forcing a download dialog:
+            self.send_blob(key, save_as=filename, content_type='application/octet-stream')
+
+
 
 class View(webapp2.RequestHandler):
 	#clicking on view tab should take you to view all streams page
@@ -285,8 +443,9 @@ class View(webapp2.RequestHandler):
 class ViewSingle(webapp2.RequestHandler):
 	#clicking on view tab should take you to view all streams page
 	def get(self, stream_name):
-		# the create page serves as the MainHandler for the create stream UploadHandler, ServeHandler
+		# the create page (or view single/image upload) serves as the MainHandler for the create stream UploadHandler, ServeHandler
 		upload_url = blobstore.create_upload_url('/upload')
+		upload_url2 = blobstore.create_upload_url('/upload2')
 		user = users.get_current_user()
 		if user:
 			url = users.create_logout_url('/')
@@ -295,12 +454,12 @@ class ViewSingle(webapp2.RequestHandler):
 		    'url': url,
 		    'url_linktext': url_linktext,
 				'upload_url': upload_url,
+				'upload_url2': upload_url2,
 			}
 			single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
 			single_stream[0].info[stream_name]['views'] += 1
 			single_stream[0].timestamps.append(str(datetime.now()))
 			single_stream[0].put()
-			print single_stream
 
 			img_info = {}
 			for x in xrange(len(single_stream)):
@@ -315,6 +474,8 @@ class ViewSingle(webapp2.RequestHandler):
 			if len(img_info) > 0:
 				template_values['streams'] = img_info
 				template_values['this_stream'] = stream_name
+				print "HEREHEREHERE"
+				print stream_name
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
@@ -322,8 +483,9 @@ class ViewSingle(webapp2.RequestHandler):
 		    'url': url,
 		    'url_linktext': url_linktext,
 			}
-		template = JINJA_ENVIRONMENT.get_template('view_sstream.html')
+		template = JINJA_ENVIRONMENT.get_template('view_sstream.html') 
 		self.response.write(template.render(template_values))
+
 
 	def post(self, stream_name):
 		# add to subscribers 
@@ -335,23 +497,30 @@ class ViewSingle(webapp2.RequestHandler):
 			time.sleep(0.1)
 			self.redirect('/viewsingle/'+stream_name)
 		else:
-			self.redirect('/')
+			self.redirect('/') 
 
 
 
 class Search(webapp2.RequestHandler):
 	def get(self):
 		user = users.get_current_user()
+		print auto_stream_names
+
 		if user:
 			url = users.create_logout_url('/')
 			url_linktext = 'Logout'
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
+
 		template_values = {
       'url': url,
-      'url_linktext': url_linktext,
+      'url_linktext': url_linktext
   	}
+  		if len(auto_stream_names) > 0:
+  			print auto_stream_names
+  			template_values['auto_stream_names'] = auto_stream_names
+
 		template = JINJA_ENVIRONMENT.get_template('search.html')
 		self.response.write(template.render(template_values))
 
@@ -454,7 +623,7 @@ class SearchStreams(webapp2.RequestHandler):
 			img_info.popitem()
 
 		if (len(img_info)) > 0:
-			template_values['streams'] = img_info  #TODO CHANGE TO ONLY SHOW 5
+			template_values['streams'] = img_info
 		else:
 			template_values['command'] = 'No matching streams found'
 
@@ -642,6 +811,32 @@ class NotFoundPageHandler(webapp2.RequestHandler):
 		template = JINJA_ENVIRONMENT.get_template('error.html')
 		self.response.write(template.render(template_values))	
 
+class refreshAutoComplete(webapp2.RequestHandler):
+	def get(self):
+		all_streams = ImageStream.query().fetch()
+		del auto_stream_names[:]
+		for x in xrange(len(all_streams)):
+			auto_stream_names.append(str(all_streams[x].stream_name))
+
+		#PUT ARRAY FOR STORAGE! SORT BEFOREHAND!!
+		return
+
+class buildGeo(webapp2.RequestHandler):
+	def get(self):
+		user = users.get_current_user()
+		if user:
+			url = users.create_logout_url('/')
+			url_linktext = 'Logout'
+		else:
+			url = users.create_login_url(self.request.uri)
+			url_linktext = 'Login'
+		template_values = {
+			'url': url,
+			'url_linktext': url_linktext,
+		}
+		template = JINJA_ENVIRONMENT.get_template('geo_view.html')
+		self.response.write(template.render(template_values))	
+
 
 application = webapp2.WSGIApplication([
   ('/', MainPage),
@@ -659,9 +854,12 @@ application = webapp2.WSGIApplication([
 	('/trendingDaily', TrendingDaily),
 	('/social', Social),
 	('/upload', UploadHandler),
+	('/upload2', UploadHandler2),
+	('/geo', buildGeo),
 	('/delete', DeleteStream),
 	('/serve/([^/]+)?', ServeHandler),
 	('/error/([^/]+)?', ErrorHandler),
+	('/refreshAutoComplete', refreshAutoComplete),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
 
