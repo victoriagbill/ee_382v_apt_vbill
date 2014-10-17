@@ -853,6 +853,9 @@ class buildGeo(webapp2.RequestHandler):
 		print img_urls
 		print type(img_urls[0])
 		template_values['img_urls'] = img_urls
+		new_list = zip(img_urls, latlong[0:len(img_urls)])
+		template_values['new_list'] = new_list
+		print new_list
 
 		template = JINJA_ENVIRONMENT.get_template('geo_view.html')
 		self.response.write(template.render(template_values))	

@@ -849,10 +849,12 @@ class buildGeo(webapp2.RequestHandler):
 		template_values['latlong'] = latlong
 		img_urls = []
 		for x in img_info[stream_name][stream_name]['stream_urls']:
-			img_urls.append('<img src='+str(x[0])+' height="80px">')
+			img_urls.append(str(x[0]))
 		print img_urls
 		print type(img_urls[0])
 		template_values['img_urls'] = img_urls
+		new_list = zip(img_urls, latlong[0:len(img_urls)])
+		template_values['new_list'] = new_list
 
 		template = JINJA_ENVIRONMENT.get_template('geo_view.html')
 		self.response.write(template.render(template_values))	

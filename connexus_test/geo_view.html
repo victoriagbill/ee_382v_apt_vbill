@@ -46,7 +46,7 @@
     //<!--
       $("#slider").dateRangeSlider({
  		 bounds:{
-    	min: new Date(2012, 0, 1),
+    	min: new Date(2013, 0, 1),
     	max: new Date(2014, 9, 31)
   		}},
   		{
@@ -55,7 +55,7 @@
   		}},
   		{
   		defaultValues:{
-    	min: new Date(2012, 0, 1),
+    	min: new Date(2013, 0, 1),
     	max: new Date(2014, 9, 31)
   		}
   	});
@@ -92,19 +92,41 @@
 					$('#map_canvas').gmap({'center': '30.282788,-97.553101', 'zoom': 1, 'disableDefaultUI':true, 'callback': function() {
 						var self = this;
 						var urls = {{ img_urls|safe }};
-						var ll = {{ latlong|safe }};;
+						var ll = {{ latlong|safe }};
 						for (i = 0; i < urls.length; i++) {
-							self.addMarker({'position': ll[i], 'bounds': false }).mouseover(function() {
-								self.openInfoWindow({ 'content': '<img src=../img/Cover.jpg height="80px">' }, this);
+							(function(index) {
+							var url = '<img src='+urls[index]+' height="80px">';
+							self.addMarker({'position': ll[index], 'bounds': false }).mouseover(function() {
+								self.openInfoWindow({ 'content': url }, this);
 							});
+							})(i);
 						};
 
 					}});
-				}).load();			
-			});
+				}).load();	
 
 
+	});
    	</script> 
+
+
+<!--
+		<script type="text/javascript">
+			var urls = {{ img_urls|safe }};
+			var ll = {{ latlong|safe }};
+			for (i = 0; i < urls.length; i++) {
+			var url = '<img src='+urls[i]+' height="80px">';
+			$(function() {
+			$('#map_canvas').gmap().bind('init', function(ev, map) {
+					$('#map_canvas').gmap('addMarker', {'position': ll[i], 'bounds': false}).mouseover(function() {
+					$('#map_canvas').gmap('openInfoWindow', {'content': url}, this);
+					});
+					});
+		});
+		};
+		</script>-->
+
+			
 
 
 
