@@ -60,7 +60,7 @@
 					$('#map_canvas').gmap({'center': '30.282788,-97.553101', 'zoom': 1, 'disableDefaultUI':true, 'callback': function() {
 						var self = this;
 						self.addMarker({'position': this.get('map').getCenter() }).mouseover(function() {
-							self.openInfoWindow({ 'content': '<img src="img/Cover.jpg" height="80px">' }, this);
+							self.openInfoWindow({ 'content': '<img src="img/Cover.jpg" height="50px">' }, this);
 						});
 						self.addMarker({'position': '53.330873,-96.734619', 'bounds': false }).click(function() {
 							self.openInfoWindow({ 'content': '<img src="img/Cover.jpg">' }, this);
@@ -69,7 +69,7 @@
 							self.openInfoWindow({ 'content': '<img src="img/Cover.jpg">' }, this);
 						});
 						self.addMarker({'position': '32.694866,-117.171936', 'bounds': false }).mouseover(function() {
-							self.openInfoWindow({ 'content': '<img src="img/Cover.jpg" height="80px">' }, this);
+							self.openInfoWindow({ 'content': '<img src="img/Cover.jpg">' }, this);
 						});
 						
 

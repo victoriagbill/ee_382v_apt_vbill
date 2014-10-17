@@ -844,7 +844,7 @@ class buildGeo(webapp2.RequestHandler):
 
 		latlong_list = ['30.282788,-97.553101']
 		template_values['latlong'] = latlong_list
-		#template_values['this_stream'] = stream_name
+		template_values['this_stream'] = stream_name
 
 		template = JINJA_ENVIRONMENT.get_template('geo_view.html')
 		self.response.write(template.render(template_values))	
