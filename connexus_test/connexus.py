@@ -834,22 +834,16 @@ class buildGeo(webapp2.RequestHandler):
 			'url': url,
 			'url_linktext': url_linktext,
 		}
-
+		print stream_name
+		print type(stream_name)
 		single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
-		single_stream[0].info[stream_name]['views'] += 1
-		single_stream[0].timestamps.append(str(datetime.now()))
-		single_stream[0].put()
+		print single_stream
 		img_info = {}
 		for x in xrange(len(single_stream)):
 			img_info[single_stream[x].stream_name] = single_stream[x].info
 
 		# based on number of pictures in stream, just generate random number of them for now, grab from this list based on stream length
-		latlong =['30.282788,-97.553101','-25.799891,145.140381',
-			'30.306503,-97.74622',
-			'39.774769,-82.975616','32.694866,-117.171936',
-			'46.55886,0.999756','35.746512,127.562256',
-			'-7.710992,-67.554932','53.330873,-96.734619',
-			'53.540307,-7.437744','32.068611,34.814816']
+		latlong =['30.282788,-97.553101','-25.799891,145.140381','30.306503,-97.74622','39.774769,-82.975616','32.694866,-117.171936','46.55886,0.999756','35.746512,127.562256','-7.710992,-67.554932','53.330873,-96.734619','53.540307,-7.437744','32.068611,34.814816']
 
 		template_values['this_stream'] = stream_name
 		template_values['latlong'] = latlong
@@ -857,6 +851,7 @@ class buildGeo(webapp2.RequestHandler):
 		for x in img_info[stream_name][stream_name]['stream_urls']:
 			img_urls.append(str(x[0]))
 		print img_urls
+		print type(img_urls[0])
 		template_values['img_urls'] = img_urls
 
 		template = JINJA_ENVIRONMENT.get_template('geo_view.html')

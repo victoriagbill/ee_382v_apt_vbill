@@ -91,16 +91,12 @@
 					demo.add(function() {
 					$('#map_canvas').gmap({'center': '30.282788,-97.553101', 'zoom': 1, 'disableDefaultUI':true, 'callback': function() {
 						var self = this;
-						self.addMarker({'position': '53.330873,-96.734619', 'bounds': false }).mouseover(function() {
-							self.openInfoWindow({ 'content': '<img src="../img/Cover.jpg" height="80px">' }, this);
-						});
 						var urls = {{ img_urls|safe }};
-						$('#test') = urls;
-						var ll = {{ latlong|safe }};
+						var ll = {{ latlong|safe }};;
 						for (i = 0; i < urls.length; i++) {
-						self.addMarker({'position': 'll[i]', 'bounds': false }).mouseover(function() {
-							self.openInfoWindow({ 'content': '<img src=urls[i] height="80px">' }, this);
-						});
+							self.addMarker({'position': ll[i], 'bounds': false }).mouseover(function() {
+								self.openInfoWindow({ 'content': '<img src=../img/Cover.jpg height="80px">' }, this);
+							});
 						};
 
 					}});
@@ -109,7 +105,8 @@
 
 
    	</script> 
-		<div id="test"></div>
+
+
 
 <!-- 
 						self.addMarker({'position': '53.330873,-96.734619', 'bounds': false }).mouseover(function() {
