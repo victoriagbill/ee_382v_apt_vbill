@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+{% autoescape true %}
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<script type="text/javascript" src="/js/jquery-1.11.0.min.js"></script> 
+	<script type="text/javascript" src="/js/lightbox.min.js"></script>
+	<script type="text/javascript" src="/js/scripts.js"></script>
+
+    <link rel="stylesheet" href="/stylesheets/main.css" />
+
+
+    <link rel="stylesheet" href="../css/iThing.css" type="text/css" />
+    <script src="/js/jquery-1.11.0.min.js"></script>
+    <script src="/js/jquery-ui.js"></script>
+    <script src="/js/jQDateRangeSlider-min.js"></script>
+    <script>
+	//$(function() {
+    //	var timestamps = {{ time_stamps|safe }};
+    //});  
+	</script>
+
+  </head>
+  <body>
+<hr>
+
+    <h3>Date Slider</h3>
+    <div id="slider"></div>
+
+    <script>
+    //<!--
+      $("#slider").dateRangeSlider({
+ 		 bounds:{
+    	min: new Date(2012, 0, 1),
+    	max: new Date(2014, 9, 31)
+  		}},
+  		{
+ 		 step:{
+    		days: 1
+  		}},
+  		{
+  		defaultValues:{
+    	min: new Date(2012, 0, 1),
+    	max: new Date(2014, 9, 31)
+  		}
+  	});
+     $("#slider").bind("valuesChanged", function(e, data){
+     	 var min = data.values.min;
+    	 var max = data.values.max;
+     	//for (i = 0; i < timestamps.legnth; i++) {
+     		//if (timestamps[i] < max && timestamps[i] > min)
+     			//drop pin, else is outside bounds and is skipped
+     	//}
+	});
+    </script>
+
+
+  </body>
+</html>
+{% endautoescape %}
