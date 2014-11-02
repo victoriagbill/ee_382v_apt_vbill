@@ -1,0 +1,31 @@
+test_t1 (ExperimentTest.MyTestCase) ... ok
+test_t2 (ExperimentTest.MyTestCase) ... ok
+test_t3 (ExperimentTest.MyTestCase) ... ok
+test_t4 (ExperimentTest.MyTestCase) ... ok
+test_t5 (ExperimentTest.MyTestCase) ... ok
+test_t6 (ExperimentTest.MyTestCase) ... ok
+test_t7 (ExperimentTest.MyTestCase) ... ok
+
+Name             Stmts   Miss  Cover   Missing
+----------------------------------------------
+Experiment           9      0   100%   
+ExperimentTest      25      1    96%   34
+----------------------------------------------
+TOTAL               34      1    97%   
+----------------------------------------------------------------------
+Ran 7 tests in 0.003s
+
+OK
+************* Module Experiment
+W:  4, 0: Bad indentation. Found 2 spaces, expected 4 (bad-indentation)
+W:  5, 0: Bad indentation. Found 4 spaces, expected 8 (bad-indentation)
+W:  6, 0: Bad indentation. Found 2 spaces, expected 4 (bad-indentation)
+W:  8, 0: Bad indentation. Found 2 spaces, expected 4 (bad-indentation)
+W:  9, 0: Bad indentation. Found 4 spaces, expected 8 (bad-indentation)
+C:  9, 0: Unnecessary parens after 'if' keyword (superfluous-parens)
+W: 10, 0: Bad indentation. Found 6 spaces, expected 12 (bad-indentation)
+W: 11, 0: Bad indentation. Found 2 spaces, expected 4 (bad-indentation)
+C:  1, 0: Missing module docstring (missing-docstring)
+W:  6, 2: Redefining built-in 'max' (redefined-builtin)
+W:  3,12: Redefining built-in 'list' (redefined-builtin)
+C:  3, 0: Missing function docstring (missing-docstring)

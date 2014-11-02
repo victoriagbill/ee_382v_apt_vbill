@@ -1,0 +1,2 @@
+nosetests -v --with-coverage ExperimentTest.py -s > testFile.txt 
+pylint -r n Experiment.py >> testFile.txt
