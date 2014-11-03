@@ -1,0 +1,3 @@
+PYTHONPATH=$WORKSPACE
+nosetests -v --exe --with-coverage --with-xunit --cover-package=lab3_testing
+python -m coverage xml --include=lab3_testing*
