@@ -1,7 +1,7 @@
 import unittest
 import Experiment
 
-class test_this(unittest.TestCase):
+class MyTestCase(unittest.TestCase):
 
   def test_t1(self):
     r1 = Experiment.largest([1,1,1]) 
