@@ -389,21 +389,28 @@ class UploadHandler2(blobstore_handlers.BlobstoreUploadHandler):
 # create new view class handler for android app, should return json dumped data of all necessary info for app
 # must pass stream name in order for handler to grab for ViewSingleAndroid
 class ViewAndroid(webapp2.RequestHandler):
-	def post(self):
+	def get(self):
 		#don't need to check for user info?
 		all_streams = ImageStream.query().fetch()
 		img_info = {}
 		for x in xrange(len(all_streams)):
-			img_info[all_streams[x].stream_name] = all_streams[x].info
+			stream_name = all_streams[x].stream_name
+			img_info[stream_name] = all_streams[x].info[stream_name]['stream_urls']
 		if len(img_info) == 0:
 			img_info['no_stream'] = 'no streams yet'			
-		s = json.dumps(img_info, separators=(',',':'))
-		return s
+		android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
+		print android_data
+		print type(android_data)
+		#self.response.headers['Content-Type'] = 'application/json'
+		self.response.headers['Content-Type'] ='text/plain'
+		self.response.out.write(android_data)
+		#self.response.write(android_data)
+		request.add_data(android_data)
 		
 
 class ViewSingleAndroid(webapp2.RequestHandler):
 	# android needs to pass in stream_name in url for view single
-	def post(self, stream_name):
+	def get(self, stream_name):
 		#don't need to check for user info?
 		single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
 		single_stream[0].info[stream_name]['views'] += 1
@@ -414,13 +421,14 @@ class ViewSingleAndroid(webapp2.RequestHandler):
 			img_info[single_stream[x].stream_name] = single_stream[x].info
 		if len(img_info) == 0:
 			img_info['no_stream'] = 'no streams yet'			
-		s = json.dumps(img_info, separators=(',',':'))
-		return s
+		android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
+		self.response.headers['Content-Type'] ='text/plain'
+		self.response.out.write(android_data)
 		
 
 class ViewNearbyAndroid(webapp2.RequestHandler):
 	# android needs to pass in location for view nearby????
-	def post(self, location):
+	def get(self, location):
 		#don't need to check for user info?
 		#query should then check location and get locations where difference is less than some_distance
 		#calculate abs distance from latitude and longitude?
@@ -430,12 +438,14 @@ class ViewNearbyAndroid(webapp2.RequestHandler):
 			img_info[nearby_streams[x].stream_name] = nearby_streams[x].info
 		if len(img_info) == 0:
 			img_info['no_stream'] = 'no streams yet'			
-		s = json.dumps(img_info, separators=(',',':'))
-		return s
+		android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
+		self.response.headers['Content-Type'] ='text/plain'
+		self.response.out.write(android_data)
 
 # create new upload handler for android app, should accept full image from app? store to blobstore as before?
 class UploadAndroid(blobstore_handlers.BlobstoreUploadHandler):
-	def post(self, image):
+	def get(self, image):
+		print "nothing here yet"
 		#can the android app pass the entire image?
 		#look at android camera code to see how upload/image compression and storing is handled
 	
@@ -941,9 +951,9 @@ application = webapp2.WSGIApplication([
 	('/error/([^/]+)?', ErrorHandler),
 	('/refreshAutoComplete', refreshAutoComplete),
 	('/viewandroid', ViewAndroid),
-	('/viewsingleandroid', ViewSingleAndroid),
-	('/viewnearbyandroid', ViewNearbyAndroid),
-	('/uploadandroid', UploadAndroid),
+	('/viewsingleandroid/([^/]+)?', ViewSingleAndroid),
+	('/viewnearbyandroid/([^/]+)?', ViewNearbyAndroid),
+	('/uploadandroid/([^/]+)?', UploadAndroid),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
 
