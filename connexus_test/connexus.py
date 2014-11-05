@@ -940,6 +940,10 @@ application = webapp2.WSGIApplication([
 	('/serve/([^/]+)?', ServeHandler),
 	('/error/([^/]+)?', ErrorHandler),
 	('/refreshAutoComplete', refreshAutoComplete),
+	('/viewandroid', ViewAndroid),
+	('/viewsingleandroid', ViewSingleAndroid),
+	('/viewnearbyandroid', ViewNearbyAndroid),
+	('/uploadandroid', UploadAndroid),
 	('/.*', NotFoundPageHandler),
 ], debug=True)
 

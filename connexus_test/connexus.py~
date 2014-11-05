@@ -384,7 +384,64 @@ class UploadHandler2(blobstore_handlers.BlobstoreUploadHandler):
 		if 'application/json' in self.request.headers.get('Accept'):
 			self.response.headers['Content-Type'] = 'application/json'
 		self.response.write(s)'''
+
+
+# create new view class handler for android app, should return json dumped data of all necessary info for app
+# must pass stream name in order for handler to grab for ViewSingleAndroid
+class ViewAndroid(webapp2.RequestHandler):
+	def post(self):
+		#don't need to check for user info?
+		all_streams = ImageStream.query().fetch()
+		img_info = {}
+		for x in xrange(len(all_streams)):
+			img_info[all_streams[x].stream_name] = all_streams[x].info
+		if len(img_info) == 0:
+			img_info['no_stream'] = 'no streams yet'			
+		s = json.dumps(img_info, separators=(',',':'))
+		return s
+		
+
+class ViewSingleAndroid(webapp2.RequestHandler):
+	# android needs to pass in stream_name in url for view single
+	def post(self, stream_name):
+		#don't need to check for user info?
+		single_stream = ImageStream.query(ImageStream.stream_name == stream_name).fetch()
+		single_stream[0].info[stream_name]['views'] += 1
+		single_stream[0].timestamps.append(str(datetime.now()))
+		single_stream[0].put()
+		img_info = {}
+		for x in xrange(len(single_stream)):
+			img_info[single_stream[x].stream_name] = single_stream[x].info
+		if len(img_info) == 0:
+			img_info['no_stream'] = 'no streams yet'			
+		s = json.dumps(img_info, separators=(',',':'))
+		return s
+		
+
+class ViewNearbyAndroid(webapp2.RequestHandler):
+	# android needs to pass in location for view nearby????
+	def post(self, location):
+		#don't need to check for user info?
+		#query should then check location and get locations where difference is less than some_distance
+		#calculate abs distance from latitude and longitude?
+		nearby_streams = ImageStream.query().fetch()
+		img_info = {}
+		for x in xrange(len(nearby_streams)):
+			img_info[nearby_streams[x].stream_name] = nearby_streams[x].info
+		if len(img_info) == 0:
+			img_info['no_stream'] = 'no streams yet'			
+		s = json.dumps(img_info, separators=(',',':'))
+		return s
+
+# create new upload handler for android app, should accept full image from app? store to blobstore as before?
+class UploadAndroid(blobstore_handlers.BlobstoreUploadHandler):
+	def post(self, image):
+		#can the android app pass the entire image?
+		#look at android camera code to see how upload/image compression and storing is handled
 	
+
+
+		
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
@@ -855,6 +912,7 @@ class buildGeo(webapp2.RequestHandler):
 		template_values['img_urls'] = img_urls
 		new_list = zip(img_urls, latlong[0:len(img_urls)])
 		template_values['new_list'] = new_list
+		print new_list
 
 		template = JINJA_ENVIRONMENT.get_template('geo_view.html')
 		self.response.write(template.render(template_values))	
