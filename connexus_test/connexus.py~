@@ -393,21 +393,26 @@ class ViewAndroid(webapp2.RequestHandler):
 		#don't need to check for user info?
 		all_streams = ImageStream.query().fetch()
 		img_info = {}
+		test = {}
 		for x in xrange(len(all_streams)):
 			stream_name = all_streams[x].stream_name
+			img_info[stream_name+'_length'] = len(all_streams[x].info[stream_name]['stream_urls'])
 			img_info[stream_name] = all_streams[x].info[stream_name]['stream_urls']
+			test[stream_name] = str(len(all_streams[x].info[stream_name]['stream_urls']))
+			for y in xrange(len(all_streams[x].info[stream_name]['stream_urls'])):
+				test[stream_name] = test[stream_name] +' '+ str( all_streams[x].info[stream_name]['stream_urls'][y][0])
+		print test
+				
 		if len(img_info) == 0:
 			img_info['no_stream'] = 'no streams yet'			
-		android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
-		print android_data
-		print type(android_data)
-		#self.response.headers['Content-Type'] = 'application/json'
-		self.response.headers['Content-Type'] ='text/plain'
-		self.response.out.write(android_data)
-		#self.response.write(android_data)
-		return str(android_data)
-		
+		#android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
+		android_data = json.dumps(test, sort_keys=True, separators=(',',':'))
+		self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(android_data)
+		webapp2.Response(android_data)
 
+		
+	
 class ViewSingleAndroid(webapp2.RequestHandler):
 	# android needs to pass in stream_name in url for view single
 	def get(self, stream_name):
@@ -417,13 +422,19 @@ class ViewSingleAndroid(webapp2.RequestHandler):
 		single_stream[0].timestamps.append(str(datetime.now()))
 		single_stream[0].put()
 		img_info = {}
+		test = {}
 		for x in xrange(len(single_stream)):
 			img_info[single_stream[x].stream_name] = single_stream[x].info
+			test[stream_name] = str(len(single_stream[x].info[stream_name]['stream_urls']))
+			for y in xrange(len(single_stream[x].info[stream_name]['stream_urls'])):
+				test[stream_name] = test[stream_name] +' '+ str( single_stream[x].info[stream_name]['stream_urls'][y][0])
 		if len(img_info) == 0:
-			img_info['no_stream'] = 'no streams yet'			
-		android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
-		self.response.headers['Content-Type'] ='text/plain'
-		self.response.out.write(android_data)
+			img_info['no_stream'] = 'no streams yet'	
+		
+		android_data = json.dumps(test, sort_keys=True, separators=(',',':'))
+		self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(android_data)
+		webapp2.Response(android_data)
 		
 
 class ViewNearbyAndroid(webapp2.RequestHandler):
@@ -434,13 +445,20 @@ class ViewNearbyAndroid(webapp2.RequestHandler):
 		#calculate abs distance from latitude and longitude?
 		nearby_streams = ImageStream.query().fetch()
 		img_info = {}
+		test = {}
 		for x in xrange(len(nearby_streams)):
 			img_info[nearby_streams[x].stream_name] = nearby_streams[x].info
+			test[stream_name] = str(len(all_streams[x].info[stream_name]['stream_urls']))
+			for y in xrange(len(all_streams[x].info[stream_name]['stream_urls'])):
+				test[stream_name] = test[stream_name] +' '+ str( all_streams[x].info[stream_name]['stream_urls'][y][0])
 		if len(img_info) == 0:
-			img_info['no_stream'] = 'no streams yet'			
-		android_data = json.dumps(img_info, sort_keys=True, separators=(',',':'))
-		self.response.headers['Content-Type'] ='text/plain'
-		self.response.out.write(android_data)
+			img_info['no_stream'] = 'no streams yet'	
+		
+		android_data = json.dumps(test, sort_keys=True, separators=(',',':'))
+		self.response.headers['Content-Type'] = 'application/json'
+		self.response.write(android_data)
+		webapp2.Response(android_data)
+
 
 # create new upload handler for android app, should accept full image from app? store to blobstore as before?
 class UploadAndroid(blobstore_handlers.BlobstoreUploadHandler):
