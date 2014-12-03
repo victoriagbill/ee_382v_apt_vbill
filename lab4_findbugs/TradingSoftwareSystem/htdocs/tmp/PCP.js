@@ -1,0 +1,33 @@
+
+function addChartData(data) {
+data.addRows([
+ [new Date(2010,7,2), 124.9, undefined, undefined, undefined ],
+ [new Date(2010,7,3), 124.16, undefined, undefined, undefined ],
+ [new Date(2010,7,4), 125.35, undefined, undefined, undefined ],
+ [new Date(2010,7,5), 125.52, undefined, undefined, undefined ],
+ [new Date(2010,7,6), 123.97, undefined, undefined, undefined ],
+ [new Date(2010,7,9), 124.09, undefined, undefined, undefined ],
+ [new Date(2010,7,10), 122.37, undefined, undefined, undefined ],
+ [new Date(2010,7,11), 117.43, undefined, undefined, undefined ],
+ [new Date(2010,7,12), 117.15, undefined, undefined, undefined ],
+ [new Date(2010,7,13), 117.88, undefined, undefined, undefined ],
+ [new Date(2010,7,16), 117.77, undefined, undefined, undefined ],
+ [new Date(2010,7,17), 121.32, undefined, undefined, undefined ],
+ [new Date(2010,7,18), 122.27, undefined, undefined, undefined ],
+ [new Date(2010,7,19), 120.01, undefined, undefined, undefined ],
+ [new Date(2010,7,20), 119.24, undefined, undefined, undefined ],
+ [new Date(2010,7,23), 116.92, undefined, undefined, undefined ],
+ [new Date(2010,7,24), 114.0, undefined, undefined, undefined ],
+ [new Date(2010,7,25), 113.53, undefined, undefined, undefined ],
+ [new Date(2010,7,26), 113.66, undefined, undefined, undefined ],
+ [new Date(2010,7,27), 116.18, undefined, undefined, undefined ],
+ [new Date(2010,7,30), 113.92, undefined, undefined, undefined ],
+ [new Date(2010,7,31), 113.18, undefined, undefined, undefined ],
+ [new Date(2010,8,1), 119.95, undefined, undefined, undefined ],
+ [new Date(2010,7,11), 117.43, 'Buy', 'Bought 1000 shares.', undefined ],
+ [new Date(2010,7,17), 121.32, 'Sell', 'Sold 1000 shares.', null ],
+ [new Date(2010,7,17), undefined, undefined, undefined, 3889.9999999999864 ],
+ [new Date(2010,7,24), 114.0, 'Buy', 'Bought 1000 shares.', undefined ],
+ [new Date(2010,7,27), 116.18, 'Sell', 'Sold 1000 shares.', null ],
+ [new Date(2010,7,27), undefined, undefined, undefined, 6069.999999999993 ]
+ ]); }

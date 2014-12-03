@@ -1,0 +1,30 @@
+
+function addChartData(data) {
+data.addRows([
+ [new Date(2010,7,2), 42.62, undefined, undefined, undefined ],
+ [new Date(2010,7,3), 43.52, undefined, undefined, undefined ],
+ [new Date(2010,7,4), 44.74, undefined, undefined, undefined ],
+ [new Date(2010,7,5), 45.03, undefined, undefined, undefined ],
+ [new Date(2010,7,6), 45.12, undefined, undefined, undefined ],
+ [new Date(2010,7,9), 45.41, undefined, undefined, undefined ],
+ [new Date(2010,7,10), 45.59, undefined, undefined, undefined ],
+ [new Date(2010,7,11), 43.74, undefined, undefined, undefined ],
+ [new Date(2010,7,12), 43.49, undefined, undefined, undefined ],
+ [new Date(2010,7,13), 43.71, undefined, undefined, undefined ],
+ [new Date(2010,7,16), 43.8, undefined, undefined, undefined ],
+ [new Date(2010,7,17), 44.22, undefined, undefined, undefined ],
+ [new Date(2010,7,18), 44.09, undefined, undefined, undefined ],
+ [new Date(2010,7,19), 42.18, undefined, undefined, undefined ],
+ [new Date(2010,7,20), 41.51, undefined, undefined, undefined ],
+ [new Date(2010,7,23), 41.68, undefined, undefined, undefined ],
+ [new Date(2010,7,24), 41.7, undefined, undefined, undefined ],
+ [new Date(2010,7,25), 41.07, undefined, undefined, undefined ],
+ [new Date(2010,7,26), 40.4, undefined, undefined, undefined ],
+ [new Date(2010,7,27), 41.55, undefined, undefined, undefined ],
+ [new Date(2010,7,30), 41.54, undefined, undefined, undefined ],
+ [new Date(2010,7,31), 41.13, undefined, undefined, undefined ],
+ [new Date(2010,8,1), 43.53, undefined, undefined, undefined ],
+ [new Date(2010,7,19), 42.18, 'Buy', 'Bought 1000 shares.', undefined ],
+ [new Date(2010,8,1), 43.53, 'Sell', 'Sold 1000 shares.', null ],
+ [new Date(2010,8,1), undefined, undefined, undefined, 1350.0000000000014 ]
+ ]); }

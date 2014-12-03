@@ -1,0 +1,262 @@
+<html>
+<head>
+<title>Trading Strategy System</title>
+
+
+<style type="text/css" media="all">
+@import "style.css";
+</style>
+
+<script type='text/javascript' src='http://www.google.com/jsapi'></script>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="jquery-autocomplete/jquery.autocomplete.js"></script>
+<link rel="stylesheet" type="text/css" href="jquery-autocomplete/jquery.autocomplete.css" />
+<script language="javascript" type="text/javascript" src="edit_area/edit_area_full.js"></script>
+<script language="javascript" type="text/javascript">
+editAreaLoader.init({
+	id : "code",
+	syntax: "java",
+	start_highlight: true
+});
+</script>
+
+<script language="JavaScript">
+<!--
+function resize_iframe()
+{
+
+  var height=window.innerWidth;//Firefox
+  if (document.body.clientHeight)
+  {
+    height=document.body.clientHeight;//IE
+  }
+  //resize the iframe according to the size of the
+  //window (all these should be on the same line)
+  document.getElementById("glu").style.height=0.5* parseInt(height-
+  document.getElementById("glu").offsetTop-8)+"px";
+}
+
+// this will resize the iframe every
+// time you change the size of the window.
+window.onresize=resize_iframe; 
+
+//Instead of using this you can use: 
+//  <BODY onresize="resize_iframe()">
+
+
+//-->
+</script>
+
+
+<script language="Javascript">
+function xmlhttp(strURL, type, func, send) {
+    var xmlHttpReq = false;
+    var self = this;
+    // Mozilla/Safari
+    if (window.XMLHttpRequest) {
+        self.xmlHttpReq = new XMLHttpRequest();
+    }
+    // IE
+    else if (window.ActiveXObject) {
+        self.xmlHttpReq = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    self.xmlHttpReq.open(type, strURL, true);
+    self.xmlHttpReq.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    self.xmlHttpReq.onreadystatechange = function() {
+        if (self.xmlHttpReq.readyState == 4) {
+	   func(self.xmlHttpReq.responseText);
+           return;
+        }
+        if (self.xmlHttpReq.status != 200)  {
+	   func('Error');
+           return;
+        }
+    } 
+
+    // Sends the message along with specified body content (null if no body content is to be sent, e.g. for GET requests).
+    self.xmlHttpReq.send(send);
+}
+
+function UpdateResults(str) {
+
+    document.getElementById('graph_results').style.visibility='visible';
+
+	document.getElementById("text_results").innerHTML = str;
+
+	// By now, we've created the symbols.
+	// Send request to get the symbol data and populate the search box with symbols.
+	xmlhttp('/SymbolData.js','GET', UpdateSearchAutoComplete, null);
+}
+
+function UpdateSearchAutoComplete(str) {
+	eval(str);
+        $("#symbol_search").autocomplete(SymbolData);
+}
+
+google.load('visualization', '1', {'packages':['annotatedtimeline']});
+
+function DrawGChart(str) {
+	var data = new google.visualization.DataTable();
+    data.addColumn('date', 'Date');
+    data.addColumn('number', 'Closing Price');
+    data.addColumn('string', 'title1');
+    data.addColumn('string', 'text1');
+    data.addColumn('number', 'Profit');
+
+	eval(str)
+    addChartData(data);
+
+    var chart = new google.visualization.AnnotatedTimeLine(document.getElementById('Symbolchart'));
+    chart.draw(data, {displayAnnotations: true});
+}
+
+function SubmitCode(URL, type, func, textarea_id) {
+
+	// Get the code from the editArea iFrame... argh..
+    var srccode = 'code=' + editAreaLoader.getValue(textarea_id);
+
+	document.getElementById('graph_results').style.visibility='hidden';
+	document.getElementById('news').style.visibility='hidden';
+
+  document.getElementById("text_results").innerHTML = '<img src="ajax-loader.gif"/><p><i>Server executing strategy, may takes 10s of seconds</i></p>'; 
+    xmlhttp(URL,type, func, srccode);
+}
+
+function GetSymbolData(symbol, type, func)
+{
+	var URL = '/tmp/' + symbol + '.js';
+
+	xmlhttp(URL,type, func, null);
+
+	document.getElementById('news').style.visibility='visible';
+
+	var iframe_URL = 'http://www.google.com/finance/company_news?q=NASDAQ:' + symbol;
+
+	// Update news
+	document.getElementById("news").innerHTML = '<iframe style="width: 100%; height: 500px;" src="' + iframe_URL + '" />';	
+}
+
+</script>
+
+<script>
+function getNode(id) {
+  return (typeof document.layers != 'undefined') ? 
+    document.layers[id] : (document.getElementById || document.all)(id)
+}
+
+function myToggleDisp()  {
+  document.getElementById("toggleDiv").innerHTML = 
+  ' \
+<table border="1" title="Simple strategy code"><tr><td> \n\
+<pre style="font-size:medium; font-family:courier";> \
+\n\
+for (int i = 0; i < quotescount(); i++) {\n\
+  for (Position pos = getFirstOpenPosition(); pos != null; pos = getNextOpenPosition())\n\
+  {\n\
+    // If today\'s closing price is 2% more than yesterday\'s closing price,\n\
+    // sell the stock at the high if profit can be made.\n\
+    if ((close(i) > (close(i-1) * 1.02)) && (close(i) > pos.quote.getClose()) ) {\n\
+      sellAtMarket(i, pos);\n\
+    }\n\
+  }\n\
+\n\
+  // If today\'s closing price is less than 2% of yesterday\'s closing price,\n\
+  // buy the stock at the dip.\n\
+  if (close(i) < (close(i-1) * 0.98)) {\n\
+    buyAtMarket(i, 1000);\n\
+  }\n\
+}\n\
+</pre>\n\
+ \
+</td></tr><tr><td align="center"><b>Sample code.</b></td></tr></table>  '
+  ; 
+}
+
+</script>
+
+</head>
+<body>
+	
+<!-- 
+<div id="header">
+   <h1>Trading Strategy System</h1>
+</div>
+
+<h3>Authors</h3> 
+<a href="http://bit.ly/adnanaziz">Adnan Aziz</a> 
+Salim Amirdache <p>
+
+
+<div id="leftcolumn">
+
+TSS is based on Salim Amirdache's MS report, which
+is the detailed documentation and is linked <a href="http://www.ece.utexas.edu/~adnan/salim-finance-ms-2010.pdf">here</a>.
+The documentation below, also linked at
+<a href="https://docs.google.com/document/pub?id=1025j_LSlQ954XWfkxsi4810TKcshzmxhY_8yCmt7fSw">Quickstart</a>,
+is appropriate for beginners and casual users.
+<p>
+-->
+
+<iframe frameborder="1" id="glu" width="100%" onload="resize_iframe()" src="https://docs.google.com/document/pub?id=1025j_LSlQ954XWfkxsi4810TKcshzmxhY_8yCmt7fSw&amp;embedded=true"></iframe>
+
+<p>
+<p>
+<h3>Using TSS</h3>
+Type Java code into the editor below to define a strategy.
+TSS will apply your strategy to each symbol in the library of symbols.
+A simple strategy is given on the right. 
+<p>
+Here is a <a href="symbols.html">list</a> of symbols you can run
+your strategy on, with links to Yahoo Finance page.
+By default, TSS will apply your strategy to SP500 stocks and the 100 most
+traded ETFs; instructions
+on adding ETFs are given at the project page. (We leave most ETFs out to keep
+processing relatively fast.)
+<p>
+<div id="toggleDiv" onClick="myToggleDisp()"><u>Click here to get sample strategy code</u></div> <p>
+
+<h3>Code Entry Editor</h3>
+   <form method="form1">
+      <br />
+      <textarea rows="40" cols="120" id="code" name="code"></textarea>
+      <br />
+
+      <input value="Run code on server" type="button" onclick="JavaScript:SubmitCode('/SimpleFormServlet','POST', UpdateResults, 'code')">
+   </form>
+
+</div>
+
+
+<div id="rightcolumn">
+  <p>
+   <h3>Evaluating Your Strategy</h3>
+   <div id="results" name="results">
+     Results of running your strategy will appear here in the form of charts showing buys, sells and portofolio value. This may take upto a minute.<p>
+     <b>Important</b>: You need to create the historical quotes database  the first time
+     you run TSS, and will also need to update it to get the latest trends.
+     TSS does not do this automatically, because of the time taken to download the data.
+     Instructions on creating and updating the database are given in the online documentation.
+     <p>
+
+      <div id="text_results" name="text_results"></div>
+      <div id="graph_results" name="graph_results" style="visibility:hidden;">
+      <form method="form2">
+        <input type="text" id="symbol_search" name="symbol_search" size="31" />
+        <p>
+	   <input value="Get results for symbol" type="button" onclick="JavaScript:GetSymbolData(document.getElementById('symbol_search').value,'GET', DrawGChart)">
+     (Enter symbol in uppercase.)
+      </form>
+      <br />
+      <div id='Symbolchart' style='width: 700px; height: 240px;'></div>
+      </div>
+      <br />
+      <br />
+      <div id="news" name="news" style="style='visibility:hidden;"></div>
+
+   </div>
+</div>
+
+<div id="footer"></div>
+
+</body>
+</html>
